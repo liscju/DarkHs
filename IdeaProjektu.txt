@@ -1,0 +1,22 @@
+System Kontroli Wersji
+- darkhs
+
+Zalozenia
+- rozproszony(narazie lokalny:P)
+- przechowuje info o repo w katalogu .darkhs
+- tymczasowo uzytkownik musi byc w katalogu z .darkhs , pozniej sie to zmieni
+- nie ma czegos takiego jak index w gicie(nie ma add - wszystko jest commitowane)
+
+Struktura
+	.darkhs -> glowny katalogu
+		Plik HEAD -> plik z numerem obecnego commitu
+		files -> w nim znajduja sie pliki
+			NR gdzie NR >= 1 i w nim tresc
+		commits -> w nim znajduja sie informacje o commitach
+			Plik NR gdzie NR>=1
+			    -> message commitu
+				-> odwolanie do commitu poprzedniego(0 dla pierwszego)
+				-> numer tree pliku gdzie sa info o plikach
+		trees ->
+			Plik NR gdzie NR to nummer drzewa NR >= 1
+				-> [DIR|FILE]: sciezka_do_pliku [NR_PLIKU]
