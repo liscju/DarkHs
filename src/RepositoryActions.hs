@@ -60,6 +60,29 @@ logRepository =
             putStrLn $ "Log failed with exception :" ++
                                         show (exc :: IOException) )
 
+checkoutRepository :: CommitId -> IO ()
+checkoutRepository commitId =
+    catch
+        (do
+            commitInfo <- getCommitInformation commitId
+            let commitTreeId = getCommitTreeId commitInfo
+            commitTreeInfo <- getTreeInfo commitTreeId
+            clearCurrentWorkingDirectory
+            copyRepoFilesToWorkingDirectory commitTreeInfo
+            saveHeadToFile commitId
+            putStrLn $ "Checkout succesfully to #" ++ (show commitId)
+            return ())
+        (\exc ->
+            putStrLn $ "Checkout failed with exception :" ++
+                                        show (exc :: IOException) )
+
+
+
+
+
+
+
+
 
 
 

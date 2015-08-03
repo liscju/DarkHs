@@ -119,6 +119,35 @@ getLogInformation commitId =
         logInformationAboutParents <- getLogInformation (getParentCommit commitInformation)
         return $ [(commitId,commitInformation)] ++ logInformationAboutParents
 
+getTreeInfo :: TreeId -> IO TreeInfo
+getTreeInfo treeId =
+    do
+        treeFileContent <- readFile $ combine treesDir (show treeId)
+        let treeInfoLines = lines treeFileContent
+        return $ map read treeInfoLines
+
+clearCurrentWorkingDirectory :: IO ()
+clearCurrentWorkingDirectory =
+    do
+        topDirNames <- getDirectoryContents "."
+        let properTopDirNames = filter (`notElem` [".", "..", ".darkhs"]) topDirNames
+        forM properTopDirNames $ \name -> do
+            isDirectory <- doesDirectoryExist name
+            if isDirectory
+                then removeDirectoryRecursive name
+                else removeFile name
+        return ()
+
+copyRepoFilesToWorkingDirectory :: TreeInfo -> IO ()
+copyRepoFilesToWorkingDirectory treeInfo =
+    forM treeInfo copyRepoFileToWorkingDirectory >> return ()
+
+copyRepoFileToWorkingDirectory :: RepoTreeFile -> IO ()
+copyRepoFileToWorkingDirectory (RepoDir dirPath) = createDirectory dirPath
+copyRepoFileToWorkingDirectory (RepoFile filePath id) =
+    copyFile (filesDir </> (show id)) filePath
+
+
 
 
 

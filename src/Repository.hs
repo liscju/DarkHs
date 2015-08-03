@@ -9,7 +9,9 @@ type FileId = Int
 data RepoTreeFile =
     RepoDir FilePath
     | RepoFile FilePath FileId
-    deriving (Show)
+    deriving (Read, Show)
+
+type TreeInfo = [RepoTreeFile]
 
 -- CommitInfo CommitMsg PreviousCommitId TreeId
 data CommitInfo = CommitInfo CommitMsg CommitId TreeId
@@ -17,8 +19,13 @@ data CommitInfo = CommitInfo CommitMsg CommitId TreeId
 
 type Commit = (CommitId, CommitInfo)
 
+type Tree = (TreeId, TreeInfo)
+
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
+
+getCommitTreeId :: CommitInfo -> TreeId
+getCommitTreeId (CommitInfo _ _ treeId) = treeId
 
 logCommitShow :: Commit -> String
 logCommitShow commit =
