@@ -42,11 +42,15 @@ saveTreeToFile treeId repoTreeFiles =
                     forM repoTreeFiles (hPutStrLn handle . show)
         return ()
 
-getCurrentCommitId :: IO Int
+getCurrentCommitId :: IO CommitId
 getCurrentCommitId =
     do
         head <- readFile headFile
         return (read head)
+
+getCommitInformation :: CommitId -> IO CommitInfo
+getCommitInformation commitId =
+    (readFile $ combine commitsDir (show commitId)) >>= return . read
 
 generateNextCommitId :: IO Int
 generateNextCommitId =
@@ -106,4 +110,31 @@ getRecursiveContents topdir = do
             then getRecursiveContents path >>= (\x -> return $ [path] ++ x)
             else return [path]
     return (concat paths)
+
+getLogInformation :: CommitId -> IO [Commit]
+getLogInformation 0 = return []
+getLogInformation commitId =
+    do
+        commitInformation <- getCommitInformation commitId
+        logInformationAboutParents <- getLogInformation (getParentCommit commitInformation)
+        return $ [(commitId,commitInformation)] ++ logInformationAboutParents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

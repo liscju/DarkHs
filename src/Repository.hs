@@ -13,5 +13,15 @@ data RepoTreeFile =
 
 -- CommitInfo CommitMsg PreviousCommitId TreeId
 data CommitInfo = CommitInfo CommitMsg CommitId TreeId
-    deriving (Show)
+    deriving (Read, Show)
+
+type Commit = (CommitId, CommitInfo)
+
+getParentCommit :: CommitInfo -> CommitId
+getParentCommit (CommitInfo _ parent _) = parent
+
+logCommitShow :: Commit -> String
+logCommitShow commit =
+    let (commitId, (CommitInfo msg _ _)) = commit in
+        "commit " ++ show commitId ++ "\n\t" ++ msg ++ "\n"
 

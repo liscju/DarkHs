@@ -47,3 +47,32 @@ commitRepository msg =
             putStrLn $ "Commiting failed with exception :" ++
                                         show (exc :: IOException) )
 
+
+logRepository :: IO ()
+logRepository =
+    catch
+        (do
+            commits <- getCurrentCommitId >>= getLogInformation
+            forM commits $ \commit -> do
+                putStrLn $ logCommitShow commit
+            return () )
+        (\exc ->
+            putStrLn $ "Log failed with exception :" ++
+                                        show (exc :: IOException) )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
