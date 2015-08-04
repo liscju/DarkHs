@@ -14,6 +14,12 @@ topdir = ".darkhs"
 headFile :: FilePath
 headFile = joinPath [topdir, "HEAD"]
 
+currentBranchPointerFile :: FilePath
+currentBranchPointerFile = joinPath [branchesDir, "CURRENT"]
+
+masterBranchFile :: FilePath
+masterBranchFile = joinPath [branchesDir, "master"]
+
 commitsDir :: FilePath
 commitsDir = joinPath [topdir, "commits"]
 
@@ -23,8 +29,8 @@ filesDir = joinPath [topdir, "files"]
 treesDir :: FilePath
 treesDir = joinPath [topdir, "trees"]
 
-initialHeadCommitId :: CommitId
-initialHeadCommitId = 0
+branchesDir :: FilePath
+branchesDir = joinPath [topdir, "branches"]
 
 saveCommitToFile :: CommitId -> CommitInfo -> IO ()
 saveCommitToFile commitId commitInfo =
@@ -168,8 +174,37 @@ changeCurrentDirectoryToMainRepoDirectory =
                             then return $ Just path
                             else findCurrentRepoMainDir $ takeDirectory path
 
+updateCurrentBranchCommit :: CommitId -> IO ()
+updateCurrentBranchCommit commitId =
+    do
+        currentBranchPointer <- getCurrentBranchPointer
+        case currentBranchPointer of
+            BranchPointer branchId -> changeBranchCommit branchId commitId
+            DetachedPointer -> return ()
 
+getCurrentBranchPointer :: IO CurrentBranchPointer
+getCurrentBranchPointer =
+    readFile currentBranchPointerFile >>= return . read
 
+changeBranchCommit :: BranchId -> CommitId -> IO ()
+changeBranchCommit branchId commitId =
+    writeFile (branchesDir </> branchId) $ show commitId
+
+getBranchCommit :: BranchId -> IO CommitId
+getBranchCommit branchId =
+    readFile (branchesDir </> branchId) >>= return . read
+
+createNewBranch :: BranchId -> CommitId -> IO ()
+createNewBranch branchId commitId =
+    changeBranchCommit branchId commitId
+
+detachCurrentBranchPointer :: IO ()
+detachCurrentBranchPointer =
+    writeFile currentBranchPointerFile (show DetachedPointer)
+
+attachCurrentBranchPointer :: BranchId -> IO ()
+attachCurrentBranchPointer branchId =
+    writeFile currentBranchPointerFile $ show $ BranchPointer branchId
 
 
 

@@ -14,7 +14,21 @@ initialRepositoryDirectories = [
         topdir,
         filesDir,
         commitsDir,
-        treesDir
+        treesDir,
+        branchesDir
+    ]
+
+initialHeadCommitId :: CommitId
+initialHeadCommitId = 0
+
+initialCurrentBranchPointer :: CurrentBranchPointer
+initialCurrentBranchPointer = BranchPointer "master"
+
+initialRepositoryFiles :: [(FilePath,String)]
+initialRepositoryFiles = [
+        (headFile, show initialHeadCommitId),
+        (currentBranchPointerFile, show initialCurrentBranchPointer),
+        (masterBranchFile, show initialHeadCommitId)
     ]
 
 repositoryActionHandler :: IO a -> (IOError -> IO a) -> IO ()
@@ -29,10 +43,11 @@ repositoryActionHandler action excHandler =
 
 initializeRepository :: IO ()
 initializeRepository =
-    repositoryActionHandler
+    catch
         (do
             forM initialRepositoryDirectories createDirectory
-            saveHeadToFile initialHeadCommitId
+            forM initialRepositoryFiles $ \(path,value) -> do
+                writeFile path value
             putStrLn "Initialize repository in .darkhs")
         (\exc ->
             putStrLn $ "Initialize failed with exception :" ++
@@ -51,6 +66,7 @@ commitRepository msg =
             let commit = CommitInfo msg currentCommitId nextTreeId
             saveCommitToFile nextCommitId commit
             saveHeadToFile nextCommitId
+            updateCurrentBranchCommit nextCommitId
             putStrLn $ "[" ++ msg ++ "]\n\t commited succesfully with ID#" ++ show nextCommitId
             return () )
         (\exc ->
@@ -72,20 +88,42 @@ logRepository =
 
 checkoutRepository :: CommitId -> IO ()
 checkoutRepository commitId =
+    do
+        commitInfo <- getCommitInformation commitId
+        let commitTreeId = getCommitTreeId commitInfo
+        commitTreeInfo <- getTreeInfo commitTreeId
+        clearCurrentWorkingDirectory
+        copyRepoFilesToWorkingDirectory commitTreeInfo
+        saveHeadToFile commitId
+
+checkoutRepositoryByCommitId :: CommitId -> IO ()
+checkoutRepositoryByCommitId commitId =
     repositoryActionHandler
         (do
-            commitInfo <- getCommitInformation commitId
-            let commitTreeId = getCommitTreeId commitInfo
-            commitTreeInfo <- getTreeInfo commitTreeId
-            clearCurrentWorkingDirectory
-            copyRepoFilesToWorkingDirectory commitTreeInfo
-            saveHeadToFile commitId
+            checkoutRepository commitId
+            detachCurrentBranchPointer
             putStrLn $ "Checkout succesfully to #" ++ (show commitId)
             return ())
         (\exc ->
             putStrLn $ "Checkout failed with exception :" ++
                                         show (exc :: IOException) )
 
+checkoutRepositoryByBranchId :: BranchId -> IO ()
+checkoutRepositoryByBranchId branchId =
+    repositoryActionHandler
+        (do
+            commitId <- getBranchCommit branchId
+            checkoutRepository commitId
+            attachCurrentBranchPointer branchId
+            putStrLn $ "Checkout succesfully to branch: " ++ branchId
+            return ())
+        (\exc ->
+            putStrLn $ "Checkout failed with exception :" ++
+                                        show (exc :: IOException) )
+
+branchRepository :: BranchId -> IO ()
+branchRepository branchId =
+    getCurrentCommitId >>= createNewBranch branchId
 
 
 

@@ -21,6 +21,16 @@ type Commit = (CommitId, CommitInfo)
 
 type Tree = (TreeId, TreeInfo)
 
+type BranchId = String
+
+data Branch = Branch BranchId CommitId
+
+data CurrentBranchPointer =
+    BranchPointer BranchId
+    | DetachedPointer
+    deriving (Read, Show)
+
+
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
 
