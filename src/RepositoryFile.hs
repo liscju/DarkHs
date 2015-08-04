@@ -148,6 +148,27 @@ copyRepoFileToWorkingDirectory (RepoFile filePath id) =
     copyFile (filesDir </> (show id)) filePath
 
 
+changeCurrentDirectoryToMainRepoDirectory :: IO ()
+changeCurrentDirectoryToMainRepoDirectory =
+    do
+        currentDirectory <- getCurrentDirectory
+        currentRepoMainDir <- findCurrentRepoMainDir currentDirectory
+        case currentRepoMainDir of
+            Nothing -> error "fatal: Not a darkhs repository (or any of the parents)"
+            Just path -> setCurrentDirectory path
+    where
+        findCurrentRepoMainDir :: FilePath -> IO (Maybe FilePath)
+        findCurrentRepoMainDir path =
+            do
+                if isDrive path
+                    then return Nothing
+                    else do
+                        hasMainRepoDir <- doesDirectoryExist (path </> topdir)
+                        if hasMainRepoDir
+                            then return $ Just path
+                            else findCurrentRepoMainDir $ takeDirectory path
+
+
 
 
 

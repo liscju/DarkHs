@@ -17,9 +17,19 @@ initialRepositoryDirectories = [
         treesDir
     ]
 
+repositoryActionHandler :: IO a -> (IOError -> IO a) -> IO ()
+repositoryActionHandler action excHandler =
+    do
+        changeCurrentDirectoryToMainRepoDirectory
+        catch
+            action
+            excHandler
+        return ()
+
+
 initializeRepository :: IO ()
 initializeRepository =
-    catch
+    repositoryActionHandler
         (do
             forM initialRepositoryDirectories createDirectory
             saveHeadToFile initialHeadCommitId
@@ -30,7 +40,7 @@ initializeRepository =
 
 commitRepository :: String -> IO ()
 commitRepository msg =
-    catch
+    repositoryActionHandler
         (do
             currentCommitId <- getCurrentCommitId
             nextCommitId <- generateNextCommitId
@@ -50,7 +60,7 @@ commitRepository msg =
 
 logRepository :: IO ()
 logRepository =
-    catch
+    repositoryActionHandler
         (do
             commits <- getCurrentCommitId >>= getLogInformation
             forM commits $ \commit -> do
@@ -62,7 +72,7 @@ logRepository =
 
 checkoutRepository :: CommitId -> IO ()
 checkoutRepository commitId =
-    catch
+    repositoryActionHandler
         (do
             commitInfo <- getCommitInformation commitId
             let commitTreeId = getCommitTreeId commitInfo
