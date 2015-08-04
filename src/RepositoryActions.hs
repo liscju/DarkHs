@@ -59,9 +59,8 @@ commitRepository msg =
         (do
             currentCommitId <- getCurrentCommitId
             nextCommitId <- generateNextCommitId
-            nextFileId <- generateNextFileId
             nextTreeId <- generateNextTreeId
-            repoTreeFileList <- copyWorkingDirectoryToRepoFiles nextFileId
+            repoTreeFileList <- copyWorkingDirectoryToRepoFiles
             saveTreeToFile nextTreeId repoTreeFileList
             let commit = CommitInfo msg currentCommitId nextTreeId
             saveCommitToFile nextCommitId commit
@@ -127,6 +126,46 @@ branchRepository branchId =
         (getCurrentCommitId >>= createNewBranch branchId)
         (\exc ->
             putStrLn $ "Checkout failed with exception :" ++
+                                        show (exc :: IOException) )
+
+printCurrentBranch :: IO ()
+printCurrentBranch =
+    do
+        currentBranchPointer <- getCurrentBranchPointer
+        currentBranchMsg <- case currentBranchPointer of
+                                BranchPointer branchId ->
+                                    return $ "On branch " ++ branchId
+                                DetachedPointer ->
+                                    getCurrentCommitId >>= return . (++) "On detached commit #" . show
+        putStrLn currentBranchMsg
+
+printWorkingDirectoryStatus :: IO ()
+printWorkingDirectoryStatus =
+    do
+        headCommitId <- getCurrentCommitId
+
+        workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
+        headDirectoryTree <-
+            getCommitInformation headCommitId >>=
+                (\commitInfo -> return $ getCommitTreeId commitInfo) >>= getTreeInfo
+
+        let filesTreeComparison = compareTreeInfos workingDirectoryTree headDirectoryTree
+        (modifiedFiles, addedFiles, removedFiles) <- filesTreeComparison
+
+        forM modifiedFiles $ putStrLn .  (++)  "\t\tmodified :\t"
+        forM addedFiles $ putStrLn    .  (++)  "\t\tadded    :\t"
+        forM removedFiles $ putStrLn  .  (++)  "\t\tremoved  :\t"
+
+        putStrLn ""
+
+statusRepository :: IO ()
+statusRepository =
+    repositoryActionHandler
+        (do
+            printCurrentBranch
+            printWorkingDirectoryStatus)
+        (\exc ->
+            putStrLn $ "Status failed with exception :" ++
                                         show (exc :: IOException) )
 
 

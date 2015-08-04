@@ -1,5 +1,7 @@
 module Repository where
 
+import Data.List
+
 type CommitId = Int
 type CommitMsg = String
 
@@ -30,6 +32,10 @@ data CurrentBranchPointer =
     | DetachedPointer
     deriving (Read, Show)
 
+-- FiletreesComparison (Modified,Added,Removed)
+type TreeInfoComparison =
+    ([FilePath],[FilePath],[FilePath])
+
 
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
@@ -41,4 +47,11 @@ logCommitShow :: Commit -> String
 logCommitShow commit =
     let (commitId, (CommitInfo msg _ _)) = commit in
         "commit " ++ show commitId ++ "\n\t" ++ msg ++ "\n"
+
+getRepoTreeFilePath :: RepoTreeFile -> FilePath
+getRepoTreeFilePath (RepoDir filePath) = filePath
+getRepoTreeFilePath (RepoFile filePath _) = filePath
+
+findRepoFileInTreeInfo :: TreeInfo -> FilePath -> Maybe RepoTreeFile
+findRepoFileInTreeInfo treeInfo path = find (((==) path) . getRepoTreeFilePath) treeInfo
 

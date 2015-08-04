@@ -12,6 +12,7 @@ data Action =
     | CheckoutByBranchId String
     | Branch String
     | Log
+    | Status
     | GetVersion
     | Usage
 
@@ -23,6 +24,7 @@ parseArguments ["checkout", paramId]
     | otherwise               = Just $ CheckoutByBranchId paramId
 parseArguments ["branch", branchId] = Just $ Branch branchId
 parseArguments ["log"] = Just Log
+parseArguments ["status"] = Just Status
 parseArguments ["--version"] = Just GetVersion
 parseArguments ["--help"] = Just Usage
 parseArguments [] = Just Usage
@@ -35,6 +37,7 @@ doAction (Just (CheckoutByCommitId commitId)) = checkoutRepositoryByCommitId com
 doAction (Just (CheckoutByBranchId branchId)) = checkoutRepositoryByBranchId branchId
 doAction (Just (Branch branchId)) = branchRepository branchId
 doAction (Just Log) = logRepository
+doAction (Just Status) = statusRepository
 doAction (Just GetVersion) = putStrLn "DarkHs version 0.1.0.0"
 doAction (Just Usage) = putStrLn "Usage: DarkHs.exe [--version|--help]"
 doAction Nothing = putStrLn "Unrecognized command line arguments"

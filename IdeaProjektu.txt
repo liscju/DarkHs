@@ -23,3 +23,7 @@ Struktura
 		branch ->
 			CURRENT -> nazwa obecnego brancha ( lub numer commitu jezeli nie ma)
 			inne branche np poczatkowy: master -> NR commitu
+
+Znalezione bugi:
+	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore
+		polecenie status ma problem z wyswietleniem i wywala - do zrobienia

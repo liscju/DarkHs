@@ -7,6 +7,9 @@ import Control.Exception
 import System.FilePath
 import Control.Monad
 import System.IO
+import Data.Maybe
+
+import Data.List
 
 topdir :: FilePath
 topdir = ".darkhs"
@@ -84,9 +87,10 @@ getBiggestId paths
     | otherwise = maximum $ ((map read filtered_paths) :: [Int])
         where filtered_paths = filter (\x -> x /= "." && x /= "..") paths
 
-copyWorkingDirectoryToRepoFiles :: Int -> IO [RepoTreeFile]
-copyWorkingDirectoryToRepoFiles firstFileId =
+copyWorkingDirectoryToRepoFiles :: IO TreeInfo
+copyWorkingDirectoryToRepoFiles =
     do
+        firstFileId <- generateNextFileId
         workingDirFilePaths <- getRecursiveContents "."
         let repoArchivedFilePaths = generateRepoFilesHolders firstFileId (length workingDirFilePaths)
         forM (zip workingDirFilePaths repoArchivedFilePaths) copyFileFromWorkingDirectoryToRepoFile
@@ -104,6 +108,10 @@ copyFileFromWorkingDirectoryToRepoFile (workingPath,repoPath) =
 generateRepoFilesHolders :: FileId -> Int -> [FilePath]
 generateRepoFilesHolders firstFileId count =
     map (combine filesDir) (map show [firstFileId .. (firstFileId + count - 1)])
+
+getContentOfRepoFile :: FileId -> IO String
+getContentOfRepoFile fileId =
+    readFile $ filesDir </> (show fileId)
 
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
@@ -206,9 +214,38 @@ attachCurrentBranchPointer :: BranchId -> IO ()
 attachCurrentBranchPointer branchId =
     writeFile currentBranchPointerFile $ show $ BranchPointer branchId
 
+compareTreeInfos :: TreeInfo -> TreeInfo -> IO TreeInfoComparison
+compareTreeInfos newTreeInfo oldTreeInfo =
+    do
+        let oldTreeInfoFilePaths = map getRepoTreeFilePath oldTreeInfo
+            newTreeInfoFilePaths = map getRepoTreeFilePath newTreeInfo
+            sharedFiles  = intersect oldTreeInfoFilePaths newTreeInfoFilePaths
+            addedFiles   = newTreeInfoFilePaths \\ oldTreeInfoFilePaths
+            removedFiles = oldTreeInfoFilePaths \\ newTreeInfoFilePaths
 
+        modifiedFiles <-
+            flip filterM sharedFiles
+                (\path -> hasTreeInfosInGivenPathSameContent newTreeInfo oldTreeInfo path >>= return . not)
 
+        return (modifiedFiles, addedFiles, removedFiles)
 
+isRepoTreeFilesSame :: RepoTreeFile -> RepoTreeFile -> IO Bool
+isRepoTreeFilesSame (RepoDir path1) (RepoDir path2) = return (path1 == path2)
+isRepoTreeFilesSame (RepoFile path1 fileId1) (RepoFile path2 fileId2) = do
+    content1 <- getContentOfRepoFile fileId1
+    content2 <- getContentOfRepoFile fileId2
+    return (path1 == path2 && content1 == content2)
+isRepoTreeFilesSame _ _ = return False
+
+hasTreeInfosInGivenPathSameContent :: TreeInfo -> TreeInfo -> FilePath -> IO Bool
+hasTreeInfosInGivenPathSameContent newTreeInfo oldTreeInfo path =
+    do
+        let
+            newFileTreeInfoEl = findRepoFileInTreeInfo newTreeInfo path
+            oldFileTreeInfoEl = findRepoFileInTreeInfo oldTreeInfo path
+        case (newFileTreeInfoEl,oldFileTreeInfoEl) of
+            (Just newEl,Just oldEl) -> (isRepoTreeFilesSame newEl oldEl) >>= return
+            otherwise -> return False
 
 
 
