@@ -24,6 +24,20 @@ Struktura
 			CURRENT -> nazwa obecnego brancha ( lub numer commitu jezeli nie ma)
 			inne branche np poczatkowy: master -> NR commitu
 
+Mergowanie:
+	-> tak generalnie bedzie polegalo na ustawieniu commitow z jednego brancha w drugim
+		+ na ewentualny merge commit
+		Mamy nastepujace sytuacje:
+		Fast Forward
+			B1= A -> B -> C -> D
+			B2= A -> B -> C -> D -> E -> F
+			B1 merge B2 = A -> B -> C -> D -> E -> F
+
+		3-way merge
+			B1= A -> B -> C -> D
+			B2= A -> B -> E -> F -> G -> H
+			B1 merge B2 = A -> B -> C -> D -> E -> F -> G -> H -> MERGE_COMMIT
+
 Znalezione bugi:
 	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore
 		polecenie status ma problem z wyswietleniem i wywala - do zrobienia
