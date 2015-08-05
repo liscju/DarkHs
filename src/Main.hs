@@ -11,6 +11,7 @@ data Action =
     | CheckoutByCommitId Int
     | CheckoutByBranchId String
     | Branch String
+    | DiffNotCommited
     | Log
     | Status
     | GetVersion
@@ -24,6 +25,7 @@ parseArguments ["checkout", paramId]
     | otherwise               = Just $ CheckoutByBranchId paramId
 parseArguments ["branch", branchId] = Just $ Branch branchId
 parseArguments ["log"] = Just Log
+parseArguments ["diff"] = Just DiffNotCommited
 parseArguments ["status"] = Just Status
 parseArguments ["--version"] = Just GetVersion
 parseArguments ["--help"] = Just Usage
@@ -37,6 +39,7 @@ doAction (Just (CheckoutByCommitId commitId)) = checkoutRepositoryByCommitId com
 doAction (Just (CheckoutByBranchId branchId)) = checkoutRepositoryByBranchId branchId
 doAction (Just (Branch branchId)) = branchRepository branchId
 doAction (Just Log) = logRepository
+doAction (Just DiffNotCommited) = diffNotCommitedRepository
 doAction (Just Status) = statusRepository
 doAction (Just GetVersion) = putStrLn "DarkHs version 0.1.0.0"
 doAction (Just Usage) = putStrLn "Usage: DarkHs.exe [--version|--help]"

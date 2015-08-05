@@ -41,3 +41,9 @@ Mergowanie:
 Znalezione bugi:
 	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore
 		polecenie status ma problem z wyswietleniem i wywala - do zrobienia
+	-> gdy working directory clean polecenie "status" wogle o tym nie wspomina
+	-> wyswietlanie danych nie powinno obdbywac sie w RepositoryAction, za duzo tam
+		wysokopoziomowej logiki aplikacji jest,powinno sie odbywac w oddzielnym module
+		RepositoryPrettyPrint gdzie do wyswietlenia mozna by uzyc biblioteki
+		Text.PrettyPrint i byloby elegancko
+	-> branch nie wyswelta czy przeszedl na inny branch po poleceniu branch cos tam?

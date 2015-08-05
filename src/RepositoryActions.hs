@@ -2,6 +2,7 @@ module RepositoryActions where
 
 import Repository
 import RepositoryFile
+import Diff
 
 import System.Directory
 import Control.Exception
@@ -142,12 +143,8 @@ printCurrentBranch =
 printWorkingDirectoryStatus :: IO ()
 printWorkingDirectoryStatus =
     do
-        headCommitId <- getCurrentCommitId
-
         workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
-        headDirectoryTree <-
-            getCommitInformation headCommitId >>=
-                (\commitInfo -> return $ getCommitTreeId commitInfo) >>= getTreeInfo
+        headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
 
         let filesTreeComparison = compareTreeInfos workingDirectoryTree headDirectoryTree
         (modifiedFiles, addedFiles, removedFiles) <- filesTreeComparison
@@ -168,7 +165,16 @@ statusRepository =
             putStrLn $ "Status failed with exception :" ++
                                         show (exc :: IOException) )
 
+diffNotCommitedRepository :: IO ()
+diffNotCommitedRepository =
+    do
+        workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
+        headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
 
+        diffedFileTree <- diffTreeInfos workingDirectoryTree headDirectoryTree
+        putStrLn $ prettyPrintDiffedFileTree diffedFileTree
+
+        return ()
 
 
 

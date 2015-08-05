@@ -1,6 +1,7 @@
 module RepositoryFile where
 
 import Repository
+import Diff
 
 import System.Directory
 import Control.Exception
@@ -94,6 +95,11 @@ copyWorkingDirectoryToRepoFiles =
         workingDirFilePaths <- getRecursiveContents "."
         let repoArchivedFilePaths = generateRepoFilesHolders firstFileId (length workingDirFilePaths)
         forM (zip workingDirFilePaths repoArchivedFilePaths) copyFileFromWorkingDirectoryToRepoFile
+
+getTreeInfoForCommitId :: CommitId -> IO TreeInfo
+getTreeInfoForCommitId commitId =
+    getCommitInformation commitId >>=
+                    (\commitInfo -> return $ getCommitTreeId commitInfo) >>= getTreeInfo
 
 copyFileFromWorkingDirectoryToRepoFile :: (FilePath,FilePath) -> IO RepoTreeFile
 copyFileFromWorkingDirectoryToRepoFile (workingPath,repoPath) =
@@ -248,8 +254,50 @@ hasTreeInfosInGivenPathSameContent newTreeInfo oldTreeInfo path =
             otherwise -> return False
 
 
+diffTreeInfos :: TreeInfo -> TreeInfo -> IO DiffedFileTree
+diffTreeInfos newTreeInfo oldTreeInfo =
+    do
+        let filesTreeComparison = compareTreeInfos newTreeInfo oldTreeInfo
+        (modifiedFiles, addedFiles, removedFiles) <- filesTreeComparison
+
+        modifiedDiffFileTree <-
+            forM modifiedFiles (diffModifiedTreeInfoFileInGivenPath newTreeInfo oldTreeInfo)
+        addedDiffFileTree <- forM addedFiles (diffAddedTreeInfoFileInGivenPath newTreeInfo)
+        removedDiffFileTree <- forM removedFiles (diffRemovedTreeInfoFileInGivenPath oldTreeInfo)
+
+        return $ modifiedDiffFileTree ++ addedDiffFileTree ++ removedDiffFileTree
+
+diffAddedTreeInfoFileInGivenPath :: TreeInfo -> FilePath -> IO DiffedFileTreeElement
+diffAddedTreeInfoFileInGivenPath treeInfo path =
+    do
+        let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
+        case foundAddedRepoTree of
+            (Just (RepoDir dirPath)) -> return $ DiffedDirectory AddedFile dirPath
+            (Just (RepoFile filePath fileId)) ->
+                getContentOfRepoFile fileId >>=
+                    return . DiffedFile AddedFile filePath . flip diff [] . lines
 
 
+diffRemovedTreeInfoFileInGivenPath :: TreeInfo -> FilePath -> IO DiffedFileTreeElement
+diffRemovedTreeInfoFileInGivenPath treeInfo path =
+    do
+        let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
+        case foundAddedRepoTree of
+            (Just (RepoDir dirPath)) -> return $ DiffedDirectory RemovedFile dirPath
+            (Just (RepoFile filePath fileId)) ->
+                getContentOfRepoFile fileId >>=
+                    return . DiffedFile RemovedFile filePath . diff [] . lines
+
+diffModifiedTreeInfoFileInGivenPath :: TreeInfo -> TreeInfo -> FilePath -> IO DiffedFileTreeElement
+diffModifiedTreeInfoFileInGivenPath newTree oldTree path =
+    do
+        let (Just (RepoFile _ fileId1)) = findRepoFileInTreeInfo newTree path
+            (Just (RepoFile _ fileId2)) = findRepoFileInTreeInfo oldTree path
+
+        fileContent1 <- getContentOfRepoFile fileId1
+        fileContent2 <- getContentOfRepoFile fileId2
+
+        return $ DiffedFile ModifiedFile path $ diff (lines fileContent1) (lines fileContent2)
 
 
 
