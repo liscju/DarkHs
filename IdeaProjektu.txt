@@ -37,10 +37,10 @@ Mergowanie:
 			B2 = A -> B -> C -> D
 			B1 merge B2 = nothing to merge
 
-		3-way merge
+		3-way merge Rebase
 			B1= A -> B -> C -> D
 			B2= A -> B -> E -> F -> G -> H
-			B1 merge B2 = A -> B -> C -> D -> E -> F -> G -> H -> MERGE_COMMIT
+			B1 merge B2 = A -> B -> E -> F -> G -> H -> C -> D
 
 Znalezione bugi:
 	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore

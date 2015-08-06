@@ -42,6 +42,10 @@ data FastForwardMergeResult =
     | FastForwardNothingToMerge
     | FastForwardNotApplicable
 
+data ThreeWayCommitRebaseMergeResult =
+    ThreeWayCommitRebaseMerged
+    | ThreeWayCommitRebaseConflictsToResolved
+
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
 

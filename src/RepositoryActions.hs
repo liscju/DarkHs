@@ -205,14 +205,24 @@ mergeBranchRepository branchId =
     do
         fastForwardResult <- tryFastForwardMergeToBranch branchId
         case fastForwardResult of
-            FastForwardNotApplicable ->
-                putStrLn "Merge: Fast forward not applicable"
             FastForwardNothingToMerge ->
                 putStrLn "Merge: Fast forward nothing to merge"
             FastForwardMerged ->
                 putStrLn "Merge: Fast forward merged"
+            FastForwardNotApplicable -> do
+                putStrLn "Merge: Fast forward not applicable"
+
 
         return ()
+
+
+
+
+
+
+
+
+
 
 
 

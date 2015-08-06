@@ -345,8 +345,31 @@ tryFastForwardMergeToBranch branchId =
                     fastForwardCurrentBranch mergeBranchCommit >> return FastForwardMerged
                 | otherwise = return FastForwardNotApplicable
 
+tryThreeWayCommitRebaseMergeToBranch :: BranchId -> IO ThreeWayCommitRebaseMergeResult
+tryThreeWayCommitRebaseMergeToBranch branchId =
+    do
+        (BranchPointer currentBranch) <- getCurrentBranchPointer
+        currentBranchCommit <- getBranchCommit currentBranch
+        mergeBranchCommit <- getBranchCommit branchId
+        youngestCommonCommitAncestor <- findBranchYoungestCommonAncestor currentBranch branchId
 
+        currentBranchTreeInfo <- getTreeInfoForCommitId currentBranchCommit
+        mergeBranchTreeInfo <- getTreeInfoForCommitId mergeBranchCommit
+        commonCommitAncestorTreeInfo <- getTreeInfoForCommitId youngestCommonCommitAncestor
 
+        currentAncestorComparison <-
+            compareTreeInfos currentBranchTreeInfo commonCommitAncestorTreeInfo
+        mergeAncestorComparison   <-
+            compareTreeInfos mergeBranchTreeInfo commonCommitAncestorTreeInfo
+
+        if isTreeInfoComparisonDisjoint currentAncestorComparison mergeAncestorComparison
+            then return ThreeWayCommitRebaseConflictsToResolved
+            else return ThreeWayCommitRebaseConflictsToResolved
+
+        where
+            isTreeInfoComparisonDisjoint :: TreeInfoComparison -> TreeInfoComparison -> Bool
+            isTreeInfoComparisonDisjoint (mod1, add1, rem1) (mod2, add2, rem2) =
+                null $ (mod1 ++ add1 ++ rem1) `intersect` (mod2 ++ add2 ++ rem2)
 
 
 
