@@ -319,16 +319,16 @@ tryFastForwardMergeToBranch branchId =
         let youngestCommonCommitAncestor =
                 findYoungestCommonCommitAncestor currentBranchCommitHistory mergedBranchCommitHistory
 
-        if (fst $ head currentBranchCommitHistory) == (fst $ head mergedBranchCommitHistory)
+        if currentBranchCommit == mergeBranchCommit
             then return FastForwardNothingToMerge
-            else if (fst $ head mergedBranchCommitHistory) == youngestCommonCommitAncestor
+            else if mergeBranchCommit == youngestCommonCommitAncestor
                 then return FastForwardNothingToMerge
                 else
-                    if (fst $ head currentBranchCommitHistory) == youngestCommonCommitAncestor
+                    if currentBranchCommit == youngestCommonCommitAncestor
                         then do
                             -- merge here
-                            updateCurrentBranchCommit (fst $ head mergedBranchCommitHistory)
-                            saveHeadToFile (fst $ head mergedBranchCommitHistory)
+                            updateCurrentBranchCommit mergeBranchCommit
+                            saveHeadToFile mergeBranchCommit
                             clearCurrentWorkingDirectory
                             getTreeInfoForCommitId mergeBranchCommit >>=
                                 copyRepoFilesToWorkingDirectory
