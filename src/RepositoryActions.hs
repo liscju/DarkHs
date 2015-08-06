@@ -124,7 +124,9 @@ checkoutRepositoryByBranchId branchId =
 branchRepository :: BranchId -> IO ()
 branchRepository branchId =
     repositoryActionHandler
-        (getCurrentCommitId >>= createNewBranch branchId)
+        (do
+            getCurrentCommitId >>= createNewBranch branchId
+            putStrLn $ "Branch " ++ branchId ++ " succesfully created")
         (\exc ->
             putStrLn $ "Checkout failed with exception :" ++
                                         show (exc :: IOException) )

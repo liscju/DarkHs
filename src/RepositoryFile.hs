@@ -210,7 +210,15 @@ getBranchCommit branchId =
 
 createNewBranch :: BranchId -> CommitId -> IO ()
 createNewBranch branchId commitId =
-    changeBranchCommit branchId commitId
+    do
+        doesBranchExists <- doesFileExist (branchesDir </> branchId)
+        if doesBranchExists
+            then
+                do
+                    error $ "Branch " ++ branchId ++ " already exists"
+                    return ()
+            else changeBranchCommit branchId commitId
+        return ()
 
 detachCurrentBranchPointer :: IO ()
 detachCurrentBranchPointer =
