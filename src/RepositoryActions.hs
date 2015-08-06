@@ -78,7 +78,7 @@ logRepository :: IO ()
 logRepository =
     repositoryActionHandler
         (do
-            commits <- getCurrentCommitId >>= getLogInformation
+            commits <- getCurrentCommitId >>= getCommitHistory
             forM commits $ \commit -> do
                 putStrLn $ logCommitShow commit
             return () )
@@ -200,7 +200,10 @@ diffBranches newBranch oldBranch =
         oldDirectoryTree <- getBranchCommit oldBranch >>= getTreeInfoForCommitId
         showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
 
-
+mergeBranchRepository :: BranchId -> IO ()
+mergeBranchRepository branchId =
+    do
+        return ()
 
 
 

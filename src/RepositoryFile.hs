@@ -131,12 +131,12 @@ getRecursiveContents topdir = do
             else return [path]
     return (concat paths)
 
-getLogInformation :: CommitId -> IO [Commit]
-getLogInformation 0 = return []
-getLogInformation commitId =
+getCommitHistory :: CommitId -> IO [Commit]
+getCommitHistory 0 = return []
+getCommitHistory commitId =
     do
         commitInformation <- getCommitInformation commitId
-        logInformationAboutParents <- getLogInformation (getParentCommit commitInformation)
+        logInformationAboutParents <- getCommitHistory (getParentCommit commitInformation)
         return $ [(commitId,commitInformation)] ++ logInformationAboutParents
 
 getTreeInfo :: TreeId -> IO TreeInfo
