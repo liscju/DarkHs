@@ -173,23 +173,32 @@ statusRepository =
             putStrLn $ "Status failed with exception :" ++
                                         show (exc :: IOException) )
 
+showDifferenceBetweenTreeInfos :: TreeInfo -> TreeInfo -> IO ()
+showDifferenceBetweenTreeInfos newTreeInfo oldTreeInfo =
+    do
+        diffedFileTree <- diffTreeInfos newTreeInfo oldTreeInfo
+        putStrLn $ prettyPrintDiffedFileTree diffedFileTree
+
 diffNotCommitedRepository :: IO ()
 diffNotCommitedRepository =
     do
         workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
         headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
+        showDifferenceBetweenTreeInfos workingDirectoryTree headDirectoryTree
 
-        diffedFileTree <- diffTreeInfos workingDirectoryTree headDirectoryTree
-        putStrLn $ prettyPrintDiffedFileTree diffedFileTree
+diffCommits :: CommitId -> CommitId -> IO ()
+diffCommits newCommit oldCommit =
+    do
+        newDirectoryTree <- getTreeInfoForCommitId newCommit
+        oldDirectoryTree <- getTreeInfoForCommitId oldCommit
+        showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
 
-        return ()
-
-
-
-
-
-
-
+diffBranches :: BranchId -> BranchId -> IO ()
+diffBranches newBranch oldBranch =
+    do
+        newDirectoryTree <- getBranchCommit newBranch >>= getTreeInfoForCommitId
+        oldDirectoryTree <- getBranchCommit oldBranch >>= getTreeInfoForCommitId
+        showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
 
 
 
