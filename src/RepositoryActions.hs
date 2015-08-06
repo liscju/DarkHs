@@ -203,7 +203,15 @@ diffBranches newBranch oldBranch =
 mergeBranchRepository :: BranchId -> IO ()
 mergeBranchRepository branchId =
     do
-        tryFastForwardMergeToBranch branchId
+        fastForwardResult <- tryFastForwardMergeToBranch branchId
+        case fastForwardResult of
+            FastForwardNotApplicable ->
+                putStrLn "Merge: Fast forward not applicable"
+            FastForwardNothingToMerge ->
+                putStrLn "Merge: Fast forward nothing to merge"
+            FastForwardMerged ->
+                putStrLn "Merge: Fast forward merged"
+
         return ()
 
 

@@ -311,21 +311,29 @@ tryFastForwardMergeToBranch :: BranchId -> IO FastForwardMergeResult
 tryFastForwardMergeToBranch branchId =
     do
         (BranchPointer currentBranch) <- getCurrentBranchPointer
-        currentBranchCommitHistory <- getBranchCommit currentBranch >>= getCommitHistory
-        mergedBranchCommitHistory  <- getBranchCommit branchId      >>= getCommitHistory
+        currentBranchCommit <- getBranchCommit currentBranch
+        currentBranchCommitHistory <- getCommitHistory currentBranchCommit
+        mergedBranchCommitHistory  <- getBranchCommit branchId >>= getCommitHistory
 
         let youngestCommonCommitAncestor =
                 findYoungestCommonCommitAncestor currentBranchCommitHistory mergedBranchCommitHistory
 
-        if (fst $ head mergedBranchCommitHistory) == youngestCommonCommitAncestor
+        if (fst $ head currentBranchCommitHistory) == (fst $ head mergedBranchCommitHistory)
             then return FastForwardNothingToMerge
-            else
-                if (fst $ head currentBranchCommitHistory) == youngestCommonCommitAncestor
-                    then do
-                        -- merge here
-                        return FastForwardMerged
-                    else
-                        return FastForwardNotApplicable
+            else if (fst $ head mergedBranchCommitHistory) == youngestCommonCommitAncestor
+                then return FastForwardNothingToMerge
+                else
+                    if (fst $ head currentBranchCommitHistory) == youngestCommonCommitAncestor
+                        then do
+                            -- merge here
+                            updateCurrentBranchCommit (fst $ head mergedBranchCommitHistory)
+                            saveHeadToFile (fst $ head mergedBranchCommitHistory)
+                            clearCurrentWorkingDirectory
+                            getTreeInfoForCommitId currentBranchCommit >>=
+                                copyRepoFilesToWorkingDirectory
+                            return FastForwardMerged
+                        else
+                            return FastForwardNotApplicable
 
 
 
