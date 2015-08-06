@@ -312,8 +312,9 @@ tryFastForwardMergeToBranch branchId =
     do
         (BranchPointer currentBranch) <- getCurrentBranchPointer
         currentBranchCommit <- getBranchCommit currentBranch
+        mergeBranchCommit <- getBranchCommit branchId
         currentBranchCommitHistory <- getCommitHistory currentBranchCommit
-        mergedBranchCommitHistory  <- getBranchCommit branchId >>= getCommitHistory
+        mergedBranchCommitHistory  <- getCommitHistory mergeBranchCommit
 
         let youngestCommonCommitAncestor =
                 findYoungestCommonCommitAncestor currentBranchCommitHistory mergedBranchCommitHistory
@@ -329,7 +330,7 @@ tryFastForwardMergeToBranch branchId =
                             updateCurrentBranchCommit (fst $ head mergedBranchCommitHistory)
                             saveHeadToFile (fst $ head mergedBranchCommitHistory)
                             clearCurrentWorkingDirectory
-                            getTreeInfoForCommitId currentBranchCommit >>=
+                            getTreeInfoForCommitId mergeBranchCommit >>=
                                 copyRepoFilesToWorkingDirectory
                             return FastForwardMerged
                         else
