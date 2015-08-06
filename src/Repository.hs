@@ -1,6 +1,7 @@
 module Repository where
 
 import Data.List
+import Data.Maybe
 
 type CommitId = Int
 type CommitMsg = String
@@ -54,4 +55,31 @@ getRepoTreeFilePath (RepoFile filePath _) = filePath
 
 findRepoFileInTreeInfo :: TreeInfo -> FilePath -> Maybe RepoTreeFile
 findRepoFileInTreeInfo treeInfo path = find (((==) path) . getRepoTreeFilePath) treeInfo
+
+findYoungestCommonCommitAncestor :: [Commit] -> [Commit] -> CommitId
+findYoungestCommonCommitAncestor commitHistory1 commitHistory2 =
+    case foundAncestor of
+        Nothing -> 0
+        Just (commitId, _) -> commitId
+    where
+        foundAncestor = find (isJust . flip find commitHistory2 . hasSameCommitId) commitHistory1
+        hasSameCommitId (commitId1, _) (commitId2, _) =
+            commitId1 == commitId2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
