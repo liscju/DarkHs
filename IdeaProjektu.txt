@@ -42,7 +42,22 @@ Mergowanie:
 			B2= A -> B -> E -> F -> G -> H
 			B1 merge B2 = A -> B -> E -> F -> G -> H -> C -> D
 
+Taktyka na Rebase
+	1: A -> B |-> C -> D -> E
+	2: A -> B |-> F -> G
+
+	Gdy branch1 i branch2 modyfikuja inne pliki:
+
+	Instrukcje
+	- skopiuj C(ale tak zeby parent wskazywal na G), D ,E
+	- spraw by tree infos dla skopiowanych commitow (C,D,E)
+		dla plikow poza currentBranchComparison wskazywalo na
+		to samo co mergeBranchCommit treeInfo
+
 Znalezione bugi:
+	=> trzeba zaimplementowac zeby kazdy commit mial jeszcze date i uzytkownika, commit
+		powinien miec mozliwosc wyszczegoleniania wiecej niz jednego rodzica,
+		w koncu 3way merge trza zaimplementowac - takie sa postanowienia
 	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore
 		polecenie status ma problem z wyswietleniem i wywala - do zrobienia
 	-> wyswietlanie danych nie powinno obdbywac sie w RepositoryAction, za duzo tam
@@ -51,3 +66,15 @@ Znalezione bugi:
 		Text.PrettyPrint i byloby elegancko
 	-> branch nie wyswelta czy przeszedl na inny branch po poleceniu branch cos tam?
 	-> nie wszystkie komendy wylapuja bledy - trzeba to zmienic
+
+
+
+
+
+
+
+
+
+
+
+
