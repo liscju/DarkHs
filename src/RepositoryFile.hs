@@ -307,17 +307,24 @@ diffModifiedTreeInfoFileInGivenPath newTree oldTree path =
 
         return $ DiffedFile ModifiedFile path $ diff (lines fileContent1) (lines fileContent2)
 
+findBranchYoungestCommonAncestor :: BranchId -> BranchId -> IO CommitId
+findBranchYoungestCommonAncestor newBranch oldBranch =
+    do
+        currentBranchCommit <- getBranchCommit newBranch
+        mergeBranchCommit <- getBranchCommit oldBranch
+        currentBranchCommitHistory <- getCommitHistory currentBranchCommit
+        mergedBranchCommitHistory  <- getCommitHistory mergeBranchCommit
+        return $ findYoungestCommonCommitAncestor
+                    currentBranchCommitHistory mergedBranchCommitHistory
+
+
 tryFastForwardMergeToBranch :: BranchId -> IO FastForwardMergeResult
 tryFastForwardMergeToBranch branchId =
     do
         (BranchPointer currentBranch) <- getCurrentBranchPointer
         currentBranchCommit <- getBranchCommit currentBranch
         mergeBranchCommit <- getBranchCommit branchId
-        currentBranchCommitHistory <- getCommitHistory currentBranchCommit
-        mergedBranchCommitHistory  <- getCommitHistory mergeBranchCommit
-
-        let youngestCommonCommitAncestor =
-                findYoungestCommonCommitAncestor currentBranchCommitHistory mergedBranchCommitHistory
+        youngestCommonCommitAncestor <- findBranchYoungestCommonAncestor currentBranch branchId
 
         if currentBranchCommit == mergeBranchCommit
             then return FastForwardNothingToMerge
