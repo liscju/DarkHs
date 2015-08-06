@@ -33,6 +33,10 @@ Mergowanie:
 			B2= A -> B -> C -> D -> E -> F
 			B1 merge B2 = A -> B -> C -> D -> E -> F
 
+			B1 = A -> B -> C -> D -> E -> F
+			B2 = A -> B -> C -> D
+			B1 merge B2 = nothing to merge
+
 		3-way merge
 			B1= A -> B -> C -> D
 			B2= A -> B -> E -> F -> G -> H
@@ -46,3 +50,4 @@ Znalezione bugi:
 		RepositoryPrettyPrint gdzie do wyswietlenia mozna by uzyc biblioteki
 		Text.PrettyPrint i byloby elegancko
 	-> branch nie wyswelta czy przeszedl na inny branch po poleceniu branch cos tam?
+	-> nie wszystkie komendy wylapuja bledy - trzeba to zmienic

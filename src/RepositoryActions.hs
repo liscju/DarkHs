@@ -203,9 +203,8 @@ diffBranches newBranch oldBranch =
 mergeBranchRepository :: BranchId -> IO ()
 mergeBranchRepository branchId =
     do
-        currentBranchCommitHistory <- getCurrentCommitId >>= getCommitHistory
-        mergedBranchCommitHistory <- getBranchCommit branchId >>= getCommitHistory
-
+        tryFastForwardMergeToBranch branchId
+        return ()
 
 
 

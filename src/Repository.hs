@@ -37,6 +37,10 @@ data CurrentBranchPointer =
 type TreeInfoComparison =
     ([FilePath],[FilePath],[FilePath])
 
+data FastForwardMergeResult =
+    FastForwardMerged
+    | FastForwardNothingToMerge
+    | FastForwardNotApplicable
 
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
