@@ -318,6 +318,16 @@ findBranchYoungestCommonAncestor newBranch oldBranch =
                     currentBranchCommitHistory mergedBranchCommitHistory
 
 
+fastForwardCurrentBranch :: CommitId -> IO ()
+fastForwardCurrentBranch commitId =
+    do
+        updateCurrentBranchCommit commitId
+        saveHeadToFile commitId
+        clearCurrentWorkingDirectory
+        getTreeInfoForCommitId commitId >>=
+            copyRepoFilesToWorkingDirectory
+
+
 tryFastForwardMergeToBranch :: BranchId -> IO FastForwardMergeResult
 tryFastForwardMergeToBranch branchId =
     do
@@ -326,22 +336,14 @@ tryFastForwardMergeToBranch branchId =
         mergeBranchCommit <- getBranchCommit branchId
         youngestCommonCommitAncestor <- findBranchYoungestCommonAncestor currentBranch branchId
 
-        if currentBranchCommit == mergeBranchCommit
-            then return FastForwardNothingToMerge
-            else if mergeBranchCommit == youngestCommonCommitAncestor
-                then return FastForwardNothingToMerge
-                else
-                    if currentBranchCommit == youngestCommonCommitAncestor
-                        then do
-                            -- merge here
-                            updateCurrentBranchCommit mergeBranchCommit
-                            saveHeadToFile mergeBranchCommit
-                            clearCurrentWorkingDirectory
-                            getTreeInfoForCommitId mergeBranchCommit >>=
-                                copyRepoFilesToWorkingDirectory
-                            return FastForwardMerged
-                        else
-                            return FastForwardNotApplicable
+        fastForwardIfApplicable currentBranchCommit mergeBranchCommit youngestCommonCommitAncestor
+        where
+            fastForwardIfApplicable currentBranchCommit mergeBranchCommit youngestCommonCommitAncestor
+                | currentBranchCommit == mergeBranchCommit = return FastForwardNothingToMerge
+                | mergeBranchCommit == youngestCommonCommitAncestor = return FastForwardNothingToMerge
+                | currentBranchCommit == youngestCommonCommitAncestor =
+                    fastForwardCurrentBranch mergeBranchCommit >> return FastForwardMerged
+                | otherwise = return FastForwardNotApplicable
 
 
 
