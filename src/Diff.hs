@@ -17,6 +17,7 @@ type DiffedFileContent = [DiffedLine]
 
 data FileChanged =
     ModifiedFile | AddedFile | RemovedFile | UnchangedFile
+    deriving(Eq)
 
 data DiffedFileTreeElement =
     DiffedDirectory FileChanged FilePath
@@ -24,6 +25,13 @@ data DiffedFileTreeElement =
 
 type DiffedFileTree = [DiffedFileTreeElement]
 
+getPathFromDiffedFileTreeElement :: DiffedFileTreeElement -> FilePath
+getPathFromDiffedFileTreeElement (DiffedDirectory _ path) = path
+getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
+
+getFileChangedFromDiffedFileTreeElement :: DiffedFileTreeElement -> FileChanged
+getFileChangedFromDiffedFileTreeElement (DiffedDirectory fileChanged _) = fileChanged
+getFileChangedFromDiffedFileTreeElement (DiffedFile fileChanged _ _) = fileChanged
 
 diff :: FileContent -> FileContent -> DiffedFileContent
 diff [] [] = []

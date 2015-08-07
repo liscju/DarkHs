@@ -9,6 +9,7 @@ import System.FilePath
 import Control.Monad
 import System.IO
 import Data.Maybe
+import Data.Either
 
 import Data.List
 
@@ -373,6 +374,21 @@ tryRebaseOneCommitMergeToBranch :: (TreeInfo, TreeInfoComparison) ->
 tryRebaseOneCommitMergeToBranch (baseCommitTreeInfo, leadingCommitComparison)
                                 (mergeCommitTreeInfo, additionalCommitComparison) =
     return ()
+
+-- newDiffFileTree,oldDiffFileTree mierzone od tego samego ancestora
+-- either left->merge conflict right->ok file
+mergeDiffFileTrees :: DiffedFileTree ->
+                      DiffedFileTree ->
+                      [Either DiffedFileTreeElement (Maybe DiffedFileTreeElement)]
+mergeDiffFileTrees newDiffFileTree oldDiffFileTree =
+    map generateDiffedFileTreeElementFromPair allPairsOfDiffedFileTreeElementWithSamePath
+    where
+        allPaths = nub $ map getPathFromDiffedFileTreeElement $ newDiffFileTree ++ oldDiffFileTree
+        diffFileTreeElements path = (find ((==) path . getPathFromDiffedFileTreeElement) newDiffFileTree,
+                                     find ((==) path . getPathFromDiffedFileTreeElement) oldDiffFileTree)
+        allPairsOfDiffedFileTreeElementWithSamePath = map diffFileTreeElements allPaths
+
+        generateDiffedFileTreeElementFromPair (_, _) = Right Nothing
 
 
 
