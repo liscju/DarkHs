@@ -200,8 +200,8 @@ diffBranches newBranch oldBranch =
         oldDirectoryTree <- getBranchCommit oldBranch >>= getTreeInfoForCommitId
         showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
 
-mergeBranchRepository :: BranchId -> IO ()
-mergeBranchRepository branchId =
+rebaseBranchRepository :: BranchId -> IO ()
+rebaseBranchRepository branchId =
     do
         fastForwardResult <- tryFastForwardMergeToBranch branchId
         case fastForwardResult of

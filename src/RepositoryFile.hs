@@ -345,31 +345,23 @@ tryFastForwardMergeToBranch branchId =
                     fastForwardCurrentBranch mergeBranchCommit >> return FastForwardMerged
                 | otherwise = return FastForwardNotApplicable
 
-tryThreeWayCommitRebaseMergeToBranch :: BranchId -> IO ThreeWayCommitRebaseMergeResult
-tryThreeWayCommitRebaseMergeToBranch branchId =
+tryRebaseMergeToBranch :: BranchId -> IO ()
+tryRebaseMergeToBranch branchId =
     do
-        (BranchPointer currentBranch) <- getCurrentBranchPointer
-        currentBranchCommit <- getBranchCommit currentBranch
-        mergeBranchCommit <- getBranchCommit branchId
-        youngestCommonCommitAncestor <- findBranchYoungestCommonAncestor currentBranch branchId
+        return ()
 
-        currentBranchTreeInfo <- getTreeInfoForCommitId currentBranchCommit
-        mergeBranchTreeInfo <- getTreeInfoForCommitId mergeBranchCommit
-        commonCommitAncestorTreeInfo <- getTreeInfoForCommitId youngestCommonCommitAncestor
+-- A -> B |-> C
+-- A -> B |-> D -> E -> F
+-- result A -> B -> D -> E -> F -> C'
+tryRebaseOneCommitMergeToBranch :: (TreeInfo, TreeInfoComparison) ->
+                                   (TreeInfo, TreeInfoComparison) ->
+                                   IO ()
+tryRebaseOneCommitMergeToBranch (baseCommitTreeInfo, leadingCommitComparison)
+                                (mergeCommitTreeInfo, additionalCommitComparison) =
+    return ()
 
-        currentAncestorComparison <-
-            compareTreeInfos currentBranchTreeInfo commonCommitAncestorTreeInfo
-        mergeAncestorComparison   <-
-            compareTreeInfos mergeBranchTreeInfo commonCommitAncestorTreeInfo
 
-        if isTreeInfoComparisonDisjoint currentAncestorComparison mergeAncestorComparison
-            then return ThreeWayCommitRebaseConflictsToResolved
-            else return ThreeWayCommitRebaseConflictsToResolved
 
-        where
-            isTreeInfoComparisonDisjoint :: TreeInfoComparison -> TreeInfoComparison -> Bool
-            isTreeInfoComparisonDisjoint (mod1, add1, rem1) (mod2, add2, rem2) =
-                null $ (mod1 ++ add1 ++ rem1) `intersect` (mod2 ++ add2 ++ rem2)
 
 
 

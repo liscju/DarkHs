@@ -14,7 +14,7 @@ data Action =
     | DiffNotCommited
     | DiffCommits Int Int
     | DiffBranches String String
-    | Merge String
+    | Rebase String
     | Log
     | Status
     | GetVersion
@@ -34,7 +34,7 @@ parseArguments ["diff", param1, param2]
         = Just $ DiffCommits (read param1) (read param2)
     | isAlpha (head param1) && isAlpha (head param2)
         = Just $ DiffBranches param1 param2
-parseArguments ["merge", branchId] = Just $ Merge branchId
+parseArguments ["rebase", branchId] = Just $ Rebase branchId
 parseArguments ["status"] = Just Status
 parseArguments ["--version"] = Just GetVersion
 parseArguments ["--help"] = Just Usage
@@ -51,7 +51,7 @@ doAction (Just Log) = logRepository
 doAction (Just DiffNotCommited) = diffNotCommitedRepository
 doAction (Just (DiffCommits newCommit oldCommit)) = diffCommits newCommit oldCommit
 doAction (Just (DiffBranches newBranch oldBranch)) = diffBranches newBranch oldBranch
-doAction (Just (Merge branchId)) = mergeBranchRepository branchId
+doAction (Just (Rebase branchId)) = rebaseBranchRepository branchId
 doAction (Just Status) = statusRepository
 doAction (Just GetVersion) = putStrLn "DarkHs version 0.1.0.0"
 doAction (Just Usage) = putStrLn "Usage: DarkHs.exe [--version|--help]"
