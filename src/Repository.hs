@@ -33,9 +33,9 @@ data CurrentBranchPointer =
     | DetachedPointer
     deriving (Read, Show)
 
--- FiletreesComparison (Modified,Added,Removed)
+-- FiletreesComparison (Modified,Added,Removed,Unmodified)
 type TreeInfoComparison =
-    ([FilePath],[FilePath],[FilePath])
+    ([FilePath],[FilePath],[FilePath],[FilePath])
 
 data FastForwardMergeResult =
     FastForwardMerged

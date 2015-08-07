@@ -241,7 +241,9 @@ compareTreeInfos newTreeInfo oldTreeInfo =
             flip filterM sharedFiles
                 (\path -> hasTreeInfosInGivenPathSameContent newTreeInfo oldTreeInfo path >>= return . not)
 
-        return (modifiedFiles, addedFiles, removedFiles)
+        let unmodifiedFiles = sharedFiles \\ modifiedFiles
+
+        return (modifiedFiles, addedFiles, removedFiles, unmodifiedFiles)
 
 isRepoTreeFilesSame :: RepoTreeFile -> RepoTreeFile -> IO Bool
 isRepoTreeFilesSame (RepoDir path1) (RepoDir path2) = return (path1 == path2)
@@ -266,14 +268,26 @@ diffTreeInfos :: TreeInfo -> TreeInfo -> IO DiffedFileTree
 diffTreeInfos newTreeInfo oldTreeInfo =
     do
         let filesTreeComparison = compareTreeInfos newTreeInfo oldTreeInfo
-        (modifiedFiles, addedFiles, removedFiles) <- filesTreeComparison
+        (modifiedFiles, addedFiles, removedFiles, unmodifiedFiles) <- filesTreeComparison
 
         modifiedDiffFileTree <-
             forM modifiedFiles (diffModifiedTreeInfoFileInGivenPath newTreeInfo oldTreeInfo)
         addedDiffFileTree <- forM addedFiles (diffAddedTreeInfoFileInGivenPath newTreeInfo)
         removedDiffFileTree <- forM removedFiles (diffRemovedTreeInfoFileInGivenPath oldTreeInfo)
+        unmodifiedDiffFileTree <- forM unmodifiedFiles (diffUnmodifiedTreeInfoFileInGivenPath newTreeInfo)
 
-        return $ modifiedDiffFileTree ++ addedDiffFileTree ++ removedDiffFileTree
+        return $ modifiedDiffFileTree ++ addedDiffFileTree ++ removedDiffFileTree ++ unmodifiedDiffFileTree
+
+diffUnmodifiedTreeInfoFileInGivenPath :: TreeInfo -> FilePath -> IO DiffedFileTreeElement
+diffUnmodifiedTreeInfoFileInGivenPath treeInfo path =
+    do
+        let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
+        case foundAddedRepoTree of
+            (Just (RepoDir dirPath)) -> return $ DiffedDirectory UnchangedFile dirPath
+            (Just (RepoFile filePath fileId)) ->
+                            getContentOfRepoFile fileId >>= \fileContent ->
+                                return $ DiffedFile UnchangedFile filePath $
+                                    diff (lines fileContent) (lines fileContent)
 
 diffAddedTreeInfoFileInGivenPath :: TreeInfo -> FilePath -> IO DiffedFileTreeElement
 diffAddedTreeInfoFileInGivenPath treeInfo path =

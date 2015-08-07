@@ -149,16 +149,17 @@ printWorkingDirectoryStatus =
         headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
 
         let filesTreeComparison = compareTreeInfos workingDirectoryTree headDirectoryTree
-        (modifiedFiles, addedFiles, removedFiles) <- filesTreeComparison
+        (modifiedFiles, addedFiles, removedFiles, unmodifiedFiles) <- filesTreeComparison
 
-        case (modifiedFiles, addedFiles, removedFiles) of
-            ([],[],[]) ->
+        case (modifiedFiles, addedFiles, removedFiles, unmodifiedFiles) of
+            ([],[],[],[]) ->
                 putStrLn "nothing to commit, working directory clean"
             otherwise ->
                 do
-                    forM modifiedFiles $ putStrLn .  (++)  "\t\tmodified :\t"
-                    forM addedFiles $ putStrLn    .  (++)  "\t\tadded    :\t"
-                    forM removedFiles $ putStrLn  .  (++)  "\t\tremoved  :\t"
+                    forM modifiedFiles $ putStrLn .   (++)  "\t\tmodified :\t"
+                    forM addedFiles $ putStrLn    .   (++)  "\t\tadded    :\t"
+                    forM removedFiles $ putStrLn  .   (++)  "\t\tremoved  :\t"
+                    forM unmodifiedFiles $ putStrLn . (++)  "\t\tunmodified: \t"
                     return ()
 
         putStrLn ""
