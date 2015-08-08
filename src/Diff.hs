@@ -98,14 +98,21 @@ prettyPrintDiffedFile (DiffedFile fileChanged filePath diffedFileContent) =
 -- either left->merge conflict right->ok file
 mergeDiffFileTrees :: DiffedFileTree ->
                       DiffedFileTree ->
-                      [Either RepoTreeFileContent (Maybe RepoTreeFileContent)]
+                      [Either RepoTreeFileContent RepoTreeFileContent]
 mergeDiffFileTrees newDiffFileTree oldDiffFileTree =
-    map mergeDiffFileTreeElementWithSamePath allPairsOfDiffedFileTreeElementWithSamePath
+    map rightJust $ filter notRightNothing $
+        map mergeDiffFileTreeElementWithSamePath allPairsOfDiffedFileTreeElementWithSamePath
     where
         allPaths = nub $ map getPathFromDiffedFileTreeElement $ newDiffFileTree ++ oldDiffFileTree
         diffFileTreeElements path = (find ((==) path . getPathFromDiffedFileTreeElement) newDiffFileTree,
                                      find ((==) path . getPathFromDiffedFileTreeElement) oldDiffFileTree)
         allPairsOfDiffedFileTreeElementWithSamePath = map diffFileTreeElements allPaths
+
+        notRightNothing (Right Nothing) = False
+        notRightNothing _               = True
+
+        rightJust (Right x) = Right $ fromJust x
+        rightJust (Left x)  = Left x
 
 -- diffedfiletreelements must have been diffed by common ancestor
 mergeDiffFileTreeElementWithSamePath :: (Maybe DiffedFileTreeElement, Maybe DiffedFileTreeElement) ->

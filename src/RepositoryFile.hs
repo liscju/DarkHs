@@ -352,20 +352,18 @@ tryFastForwardMergeToBranch branchId =
                     fastForwardCurrentBranch mergeBranchCommit >> return FastForwardMerged
                 | otherwise = return FastForwardNotApplicable
 
+-- One Commit this time only
+--
+-- current branch: A -> B |-> C
+-- merge branch:   A -> B |-> D -> E -> F
+-- result          A -> B -> D -> E -> F -> C'
 tryRebaseMergeToBranch :: BranchId -> IO ()
-tryRebaseMergeToBranch branchId =
+tryRebaseMergeToBranch mergeBranchId =
     do
-        return ()
+        BranchPointer currentBranchId <- getCurrentBranchPointer
+        commonAncestor <- findBranchYoungestCommonAncestor currentBranchId mergeBranchId
 
--- A -> B |-> C
--- A -> B |-> D -> E -> F
--- result A -> B -> D -> E -> F -> C'
-tryRebaseOneCommitMergeToBranch :: (TreeInfo, TreeInfoComparison) ->
-                                   (TreeInfo, TreeInfoComparison) ->
-                                   IO ()
-tryRebaseOneCommitMergeToBranch (baseCommitTreeInfo, leadingCommitComparison)
-                                (mergeCommitTreeInfo, additionalCommitComparison) =
-    return ()
+        return ()
 
 
 
