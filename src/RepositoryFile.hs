@@ -381,14 +381,47 @@ mergeDiffFileTrees :: DiffedFileTree ->
                       DiffedFileTree ->
                       [Either DiffedFileTreeElement (Maybe DiffedFileTreeElement)]
 mergeDiffFileTrees newDiffFileTree oldDiffFileTree =
-    map generateDiffedFileTreeElementFromPair allPairsOfDiffedFileTreeElementWithSamePath
+    map mergeDiffFileTreeElementWithSamePath allPairsOfDiffedFileTreeElementWithSamePath
     where
         allPaths = nub $ map getPathFromDiffedFileTreeElement $ newDiffFileTree ++ oldDiffFileTree
         diffFileTreeElements path = (find ((==) path . getPathFromDiffedFileTreeElement) newDiffFileTree,
                                      find ((==) path . getPathFromDiffedFileTreeElement) oldDiffFileTree)
         allPairsOfDiffedFileTreeElementWithSamePath = map diffFileTreeElements allPaths
 
-        generateDiffedFileTreeElementFromPair (_, _) = Right Nothing
+mergeDiffFileTreeElementWithSamePath :: (Maybe DiffedFileTreeElement, Maybe DiffedFileTreeElement) ->
+                            Either DiffedFileTreeElement (Maybe DiffedFileTreeElement)
+mergeDiffFileTreeElementWithSamePath newMaybeDiffTreeElement oldMaybeDiffTreeElement =
+    case (newMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement,
+          oldMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement) of
+            (Just AddedFile, Nothing) -> Right $ newMaybeDiffTreeElement
+            (Nothing, Just AddedFile) -> Right $ oldMaybeDiffTreeElement
+            (Just AddedFile, Just _)  -> tryToResolveConflictResult
+            (Just _, Just AddedFile)  -> tryToResolveConflictResult
+
+            (Just RemovedFile, Just UnchangedFile) -> Right $ newMaybeDiffTreeElement
+            (Just UnchangedFile, Just RemovedFile) -> Right $ oldMaybeDiffTreeElement
+            (Just RemovedFile, Just RemovedFile) -> Right $ Nothing
+            (Just RemovedFile, x) -> tryToResolveConflictResult
+            (x, Just RemovedFile) -> tryToResolveConflictResult
+
+            (Just ModifiedFile, Just UnchangedFile) = Right $ newMaybeDiffTreeElement
+            (Just UnchangedFile, Just ModifiedFile) = Right $ oldMaybeDiffTreeElement
+            (Just ModifiedFile, x) = tryToResolveConflictResult
+            (x, Just ModifiedFile) = tryToResolveConflictResult
+
+            (Just UnchangedFile,Just UnchangedFile) = Right $ newMaybeDiffTreeElement
+    where
+                tryToResolveConflictResult =
+                    tryResolvingMergeConflict newMaybeDiffTreeElement oldMaybeDiffTreeElement
+
+
+
+
+
+
+
+
+
 
 
 
