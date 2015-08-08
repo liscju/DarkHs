@@ -26,6 +26,7 @@ type DiffedFileTree = [DiffedFileTreeElement]
 
 data RepoTreeFileContent =
     RepoFileContent FilePath String
+    deriving (Show)
 
 getPathFromDiffedFileTreeElement :: DiffedFileTreeElement -> FilePath
 getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
@@ -146,12 +147,21 @@ mergeDiffFileTreeElementWithSamePath (newMaybeDiffTreeElement,oldMaybeDiffTreeEl
                 tryToResolveConflictResult =
                     tryResolvingMergeConflict
 
-
+-- try resolve conflict on file content level
 tryResolvingMergeConflict :: DiffedFileTreeElement ->
                              DiffedFileTreeElement ->
                              Either RepoTreeFileContent (Maybe RepoTreeFileContent)
-tryResolvingMergeConflict =
-    undefined
+tryResolvingMergeConflict (DiffedFile newFileChanged newFilePath newDiffedFileContent)
+                          (DiffedFile oldFileChanged oldFilePath oldDiffedFileContent)
+    | newFilePath /= oldFilePath = error "Resolving conflict on file level only - args must have same path"
+    | otherwise = Left $ RepoFileContent newFilePath $
+        "New Version:\n" ++
+        "=======================================\n" ++
+        getActualContent newDiffedFileContent ++
+        "\n=======================================\n" ++
+        getActualContent oldDiffedFileContent ++
+        "\n=======================================\n" ++
+        "Old Version"
 
 
 
