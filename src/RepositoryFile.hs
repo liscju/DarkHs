@@ -42,6 +42,13 @@ saveCommitToFile commitId commitInfo =
     withFile (combine commitsDir (show commitId)) AppendMode $ \handle -> do
                 hPutStr handle (show commitInfo)
 
+saveCommitInfoToFile :: CommitInfo -> IO CommitId
+saveCommitInfoToFile commitInfo =
+    do
+        commitId <- generateNextCommitId
+        saveCommitToFile commitId commitInfo
+        return commitId
+
 saveHeadToFile :: CommitId -> IO ()
 saveHeadToFile commitId =
     withFile headFile WriteMode (flip hPutStr (show commitId))
@@ -390,11 +397,32 @@ tryRebaseMergeToBranch mergeBranchId =
         let mergeResult = mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
                                              mergeBranchDiffTreeInfosFromAncestor
 
-        mergedResultTreeInfo <-
-            createTreeInfoFromRepoTreeFileContent $ (lefts mergeResult) ++ (rights mergeResult)
+        -- rights bo commit robimy tylko z tych ktore przeszly bez problemu,
+        -- jezeli problem nastapil to rozwiazuje to merge conflictach z lefts
+        mergedResultProperMergeTreeInfo <-
+            createTreeInfoFromRepoTreeFileContent $ (rights mergeResult)
 
-        mergedResultTreeId <- saveTreeInfoToFile mergedResultTreeInfo
+        mergedResultTreeId <- saveTreeInfoToFile mergedResultProperMergeTreeInfo
 
+        -- generate C' commit
+        newCommitInfoMsg <- getBranchCommit currentBranchId >>= getCommitInformation >>=
+            return . getCommitInfoMessage
+        newCommitHeadCommit <- getBranchCommit mergeBranchId
+        let newCommitInfo = CommitInfo newCommitInfoMsg newCommitHeadCommit mergedResultTreeId
+
+        newCommitId <- saveCommitInfoToFile newCommitInfo
+
+        -- Move current branch to last commit of merge branch
+        updateCurrentBranchCommit newCommitId
+        saveHeadToFile newCommitId
+
+        if not $ isMergeResultWithoutConflicts mergeResult
+            then do
+                -- przenies z left rzeczy do working directory
+                -- jakos zachowaj ten stan zeby uzytkownik mogl poprawic
+                -- bledy i zacommitowac w pelni
+                return ()
+            else return ()
 
         return ()
         where

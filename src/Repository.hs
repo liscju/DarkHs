@@ -72,7 +72,8 @@ findYoungestCommonCommitAncestor commitHistory1 commitHistory2 =
         hasSameCommitId (commitId1, _) (commitId2, _) =
             commitId1 == commitId2
 
-
+getCommitInfoMessage :: CommitInfo -> CommitMsg
+getCommitInfoMessage (CommitInfo commitMsg _ _) = commitMsg
 
 
 
