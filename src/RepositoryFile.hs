@@ -161,7 +161,8 @@ copyRepoFilesToWorkingDirectory treeInfo =
 
 copyRepoFileToWorkingDirectory :: RepoTreeFile -> IO ()
 copyRepoFileToWorkingDirectory (RepoFile filePath id) =
-    copyFile (filesDir </> (show id)) filePath
+    createDirectoryIfMissing True (takeDirectory filePath) >>
+        copyFile (filesDir </> (show id)) filePath
 
 
 changeCurrentDirectoryToMainRepoDirectory :: IO ()
