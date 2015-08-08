@@ -46,6 +46,20 @@ saveHeadToFile :: CommitId -> IO ()
 saveHeadToFile commitId =
     withFile headFile WriteMode (flip hPutStr (show commitId))
 
+generateRepoFile :: String -> IO FileId
+generateRepoFile fileContent =
+    do
+        fileId <- generateNextFileId
+        writeFile (filesDir </> (show fileId)) fileContent
+        return fileId
+
+saveTreeInfoToFile :: TreeInfo -> IO TreeId
+saveTreeInfoToFile treeInfo =
+    do
+        treeId <- generateNextTreeId
+        saveTreeToFile treeId treeInfo
+        return treeId
+
 saveTreeToFile :: TreeId -> [RepoTreeFile] -> IO ()
 saveTreeToFile treeId repoTreeFiles =
     do
@@ -363,11 +377,34 @@ tryRebaseMergeToBranch mergeBranchId =
         BranchPointer currentBranchId <- getCurrentBranchPointer
         commonAncestor <- findBranchYoungestCommonAncestor currentBranchId mergeBranchId
 
+        currentBranchTreeInfo <- getBranchCommit currentBranchId >>= getTreeInfoForCommitId
+        mergeBranchTreeInfo <- getBranchCommit mergeBranchId >>= getTreeInfoForCommitId
+        commonAncestorTreeInfo <- getTreeInfoForCommitId commonAncestor
+
+        currentBranchDiffTreeInfosFromAncestor <-
+            diffTreeInfos currentBranchTreeInfo commonAncestorTreeInfo
+
+        mergeBranchDiffTreeInfosFromAncestor <-
+            diffTreeInfos mergeBranchTreeInfo commonAncestorTreeInfo
+
+        let mergeResult = mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
+                                             mergeBranchDiffTreeInfosFromAncestor
+
+        mergedResultTreeInfo <-
+            createTreeInfoFromRepoTreeFileContent $ (lefts mergeResult) ++ (rights mergeResult)
+
+        mergedResultTreeId <- saveTreeInfoToFile mergedResultTreeInfo
+
+
         return ()
+        where
+            isMergeResultWithoutConflicts mergeResult = all isRight mergeResult
 
-
-
-
+createTreeInfoFromRepoTreeFileContent :: [RepoTreeFileContent] -> IO TreeInfo
+createTreeInfoFromRepoTreeFileContent repoTreeFilesContent =
+    forM repoTreeFilesContent $ \(RepoFileContent path content) -> do
+        generatedFileContentId <- generateRepoFile content
+        return (RepoFile path $ generatedFileContentId)
 
 
 
