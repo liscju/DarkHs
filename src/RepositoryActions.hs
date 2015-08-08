@@ -211,7 +211,8 @@ rebaseBranchRepository branchId =
             FastForwardMerged ->
                 putStrLn "Merge: Fast forward merged"
             FastForwardNotApplicable -> do
-                putStrLn "Merge: Fast forward not applicable"
+                putStrLn "Merge: Fast forward not applicable, calculating typical rebase"
+                tryRebaseMergeToBranch branchId
 
 
         return ()

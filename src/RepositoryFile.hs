@@ -416,12 +416,16 @@ tryRebaseMergeToBranch mergeBranchId =
         updateCurrentBranchCommit newCommitId
         saveHeadToFile newCommitId
 
+        clearCurrentWorkingDirectory
+        copyRepoFilesToWorkingDirectory mergedResultProperMergeTreeInfo
+
         if not $ isMergeResultWithoutConflicts mergeResult
             then do
                 -- przenies z left rzeczy do working directory
                 -- jakos zachowaj ten stan zeby uzytkownik mogl poprawic
                 -- bledy i zacommitowac w pelni
-                return ()
+                treeInfoMergeConflicts <- createTreeInfoFromRepoTreeFileContent $ (lefts mergeResult)
+                copyRepoFilesToWorkingDirectory treeInfoMergeConflicts
             else return ()
 
         return ()
