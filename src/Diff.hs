@@ -20,27 +20,20 @@ data FileChanged =
     deriving(Eq)
 
 data DiffedFileTreeElement =
-    DiffedDirectory FileChanged FilePath
-    | DiffedFile FileChanged FilePath DiffedFileContent
+    DiffedFile FileChanged FilePath DiffedFileContent
 
 type DiffedFileTree = [DiffedFileTreeElement]
 
 data RepoTreeFileContent =
-    RepoDirContent FilePath
-    | RepoFileContent FilePath String
+    RepoFileContent FilePath String
 
 getPathFromDiffedFileTreeElement :: DiffedFileTreeElement -> FilePath
-getPathFromDiffedFileTreeElement (DiffedDirectory _ path) = path
 getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
 
 getFileChangedFromDiffedFileTreeElement :: DiffedFileTreeElement -> FileChanged
-getFileChangedFromDiffedFileTreeElement (DiffedDirectory fileChanged _) = fileChanged
 getFileChangedFromDiffedFileTreeElement (DiffedFile fileChanged _ _) = fileChanged
 
 convertDiffedFileTreeElementToRepoTreeFileContent :: DiffedFileTreeElement -> Maybe RepoTreeFileContent
-convertDiffedFileTreeElementToRepoTreeFileContent (DiffedDirectory fileChanged filePath)
-    | fileChanged == RemovedFile = Nothing
-    | otherwise = Just $ RepoDirContent filePath
 convertDiffedFileTreeElementToRepoTreeFileContent (DiffedFile fileChanged filePath diffedFileContent)
     | fileChanged == RemovedFile = Nothing
     | otherwise = Just $ RepoFileContent filePath (getActualContent diffedFileContent)
@@ -82,8 +75,6 @@ prettyPrintDiffedFileTree diffedFileTree =
     unlines $ map prettyPrintDiffedFileTreeElement diffedFileTree
 
 prettyPrintDiffedFileTreeElement :: DiffedFileTreeElement -> String
-prettyPrintDiffedFileTreeElement diffedDir@(DiffedDirectory _ _) =
-    prettyPrintDiffedDirectory diffedDir
 prettyPrintDiffedFileTreeElement diffedFile@(DiffedFile _ _ _) =
     prettyPrintDiffedFile diffedFile
 
@@ -92,12 +83,6 @@ prettyPrintFileChanged ModifiedFile = "modified"
 prettyPrintFileChanged AddedFile = "added"
 prettyPrintFileChanged RemovedFile = "removed"
 prettyPrintFileChanged UnchangedFile = "unchanged"
-
-prettyPrintDiffedDirectory :: DiffedFileTreeElement -> String
-prettyPrintDiffedDirectory (DiffedDirectory fileChanged filePath) =
-    "///////////////////////\n" ++
-    "Directory " ++ filePath ++ " was " ++ prettyPrintFileChanged fileChanged ++ "\n" ++
-    "///////////////////////\n"
 
 prettyPrintDiffedFile :: DiffedFileTreeElement -> String
 prettyPrintDiffedFile (DiffedFile fileChanged filePath diffedFileContent) =

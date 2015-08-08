@@ -10,8 +10,7 @@ type TreeId = Int
 type FileId = Int
 
 data RepoTreeFile =
-    RepoDir FilePath
-    | RepoFile FilePath FileId
+    RepoFile FilePath FileId
     deriving (Read, Show)
 
 type TreeInfo = [RepoTreeFile]
@@ -58,7 +57,6 @@ logCommitShow commit =
         "commit " ++ show commitId ++ "\n\t" ++ msg ++ "\n"
 
 getRepoTreeFilePath :: RepoTreeFile -> FilePath
-getRepoTreeFilePath (RepoDir filePath) = filePath
 getRepoTreeFilePath (RepoFile filePath _) = filePath
 
 findRepoFileInTreeInfo :: TreeInfo -> FilePath -> Maybe RepoTreeFile

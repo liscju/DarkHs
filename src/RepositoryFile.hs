@@ -105,12 +105,8 @@ getTreeInfoForCommitId commitId =
 copyFileFromWorkingDirectoryToRepoFile :: (FilePath,FilePath) -> IO RepoTreeFile
 copyFileFromWorkingDirectoryToRepoFile (workingPath,repoPath) =
     do
-        isFile <- doesFileExist workingPath
-        if isFile
-            then do
-                copyFile workingPath repoPath
-                return  $ RepoFile workingPath ((read (takeFileName repoPath)) :: Int)
-            else return $ RepoDir workingPath
+        copyFile workingPath repoPath
+        return  $ RepoFile workingPath ((read (takeFileName repoPath)) :: Int)
 
 generateRepoFilesHolders :: FileId -> Int -> [FilePath]
 generateRepoFilesHolders firstFileId count =
@@ -128,7 +124,7 @@ getRecursiveContents topdir = do
         let path = topdir </> name
         isDirectory <- doesDirectoryExist path
         if isDirectory
-            then getRecursiveContents path >>= (\x -> return $ [path] ++ x)
+            then getRecursiveContents path
             else return [path]
     return (concat paths)
 
@@ -164,7 +160,6 @@ copyRepoFilesToWorkingDirectory treeInfo =
     forM treeInfo copyRepoFileToWorkingDirectory >> return ()
 
 copyRepoFileToWorkingDirectory :: RepoTreeFile -> IO ()
-copyRepoFileToWorkingDirectory (RepoDir dirPath) = createDirectory dirPath
 copyRepoFileToWorkingDirectory (RepoFile filePath id) =
     copyFile (filesDir </> (show id)) filePath
 
@@ -247,7 +242,6 @@ compareTreeInfos newTreeInfo oldTreeInfo =
         return (modifiedFiles, addedFiles, removedFiles, unmodifiedFiles)
 
 isRepoTreeFilesSame :: RepoTreeFile -> RepoTreeFile -> IO Bool
-isRepoTreeFilesSame (RepoDir path1) (RepoDir path2) = return (path1 == path2)
 isRepoTreeFilesSame (RepoFile path1 fileId1) (RepoFile path2 fileId2) = do
     content1 <- getContentOfRepoFile fileId1
     content2 <- getContentOfRepoFile fileId2
@@ -284,7 +278,6 @@ diffUnmodifiedTreeInfoFileInGivenPath treeInfo path =
     do
         let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
         case foundAddedRepoTree of
-            (Just (RepoDir dirPath)) -> return $ DiffedDirectory UnchangedFile dirPath
             (Just (RepoFile filePath fileId)) ->
                             getContentOfRepoFile fileId >>= \fileContent ->
                                 return $ DiffedFile UnchangedFile filePath $
@@ -295,7 +288,6 @@ diffAddedTreeInfoFileInGivenPath treeInfo path =
     do
         let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
         case foundAddedRepoTree of
-            (Just (RepoDir dirPath)) -> return $ DiffedDirectory AddedFile dirPath
             (Just (RepoFile filePath fileId)) ->
                 getContentOfRepoFile fileId >>=
                     return . DiffedFile AddedFile filePath . flip diff [] . lines
@@ -306,7 +298,6 @@ diffRemovedTreeInfoFileInGivenPath treeInfo path =
     do
         let foundAddedRepoTree = findRepoFileInTreeInfo treeInfo path
         case foundAddedRepoTree of
-            (Just (RepoDir dirPath)) -> return $ DiffedDirectory RemovedFile dirPath
             (Just (RepoFile filePath fileId)) ->
                 getContentOfRepoFile fileId >>=
                     return . DiffedFile RemovedFile filePath . diff [] . lines
