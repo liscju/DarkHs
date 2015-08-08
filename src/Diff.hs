@@ -6,7 +6,7 @@ import Data.List
 type Line = String
 
 data LineOperation = Unchanged | Added | Removed
-    deriving (Show)
+    deriving (Eq,Show)
 
 data DiffedLine = DiffedLine LineOperation Line
     deriving (Show)
@@ -25,6 +25,10 @@ data DiffedFileTreeElement =
 
 type DiffedFileTree = [DiffedFileTreeElement]
 
+data RepoTreeFileContent =
+    RepoDirContent FilePath
+    | RepoFileContent FilePath String
+
 getPathFromDiffedFileTreeElement :: DiffedFileTreeElement -> FilePath
 getPathFromDiffedFileTreeElement (DiffedDirectory _ path) = path
 getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
@@ -32,6 +36,21 @@ getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
 getFileChangedFromDiffedFileTreeElement :: DiffedFileTreeElement -> FileChanged
 getFileChangedFromDiffedFileTreeElement (DiffedDirectory fileChanged _) = fileChanged
 getFileChangedFromDiffedFileTreeElement (DiffedFile fileChanged _ _) = fileChanged
+
+convertDiffedFileTreeElementToRepoTreeFileContent :: DiffedFileTreeElement -> Maybe RepoTreeFileContent
+convertDiffedFileTreeElementToRepoTreeFileContent (DiffedDirectory fileChanged filePath)
+    | fileChanged == RemovedFile = Nothing
+    | otherwise = Just $ RepoDirContent filePath
+convertDiffedFileTreeElementToRepoTreeFileContent (DiffedFile fileChanged filePath diffedFileContent)
+    | fileChanged == RemovedFile = Nothing
+    | otherwise = Just $ RepoFileContent filePath (getActualContent diffedFileContent)
+
+getActualContent :: DiffedFileContent -> String
+getActualContent = unlines .
+    foldl (\currFileContent diffedNextLine -> currFileContent ++ actualLineContent diffedNextLine) []
+    where actualLineContent (DiffedLine lineOperation line)
+            | lineOperation == Removed = []
+            | otherwise = [line]
 
 diff :: FileContent -> FileContent -> DiffedFileContent
 diff [] [] = []
