@@ -145,13 +145,13 @@ mergeDiffFileTreeElementWithSamePath (newMaybeDiffTreeElement,oldMaybeDiffTreeEl
                 newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
     where
                 tryToResolveConflictResult =
-                    tryResolvingMergeConflict
+                    tryResolvingFileContentMergeConflict
 
 -- try resolve conflict on file content level
-tryResolvingMergeConflict :: DiffedFileTreeElement ->
+tryResolvingFileContentMergeConflict :: DiffedFileTreeElement ->
                              DiffedFileTreeElement ->
                              Either RepoTreeFileContent (Maybe RepoTreeFileContent)
-tryResolvingMergeConflict (DiffedFile newFileChanged newFilePath newDiffedFileContent)
+tryResolvingFileContentMergeConflict (DiffedFile newFileChanged newFilePath newDiffedFileContent)
                           (DiffedFile oldFileChanged oldFilePath oldDiffedFileContent)
     | newFilePath /= oldFilePath = error "Resolving conflict on file level only - args must have same path"
     | otherwise = Left $ RepoFileContent newFilePath $
