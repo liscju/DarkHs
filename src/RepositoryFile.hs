@@ -25,6 +25,9 @@ currentBranchPointerFile = joinPath [branchesDir, "CURRENT"]
 masterBranchFile :: FilePath
 masterBranchFile = joinPath [branchesDir, "master"]
 
+pendingFile :: FilePath
+pendingFile = joinPath [topdir, "PENDING"]
+
 commitsDir :: FilePath
 commitsDir = joinPath [topdir, "commits"]
 
@@ -433,6 +436,8 @@ tryRebaseMergeToBranch mergeBranchId =
                 -- bledy i zacommitowac w pelni
                 treeInfoMergeConflicts <- createTreeInfoFromRepoTreeFileContent $ (lefts mergeResult)
                 copyRepoFilesToWorkingDirectory treeInfoMergeConflicts
+                savePendingOperation $ MergeConflictToResolve $
+                    map getPathOfRepoTreeFileContent (lefts mergeResult)
             else return ()
 
         return ()
@@ -445,9 +450,17 @@ createTreeInfoFromRepoTreeFileContent repoTreeFilesContent =
         generatedFileContentId <- generateRepoFile content
         return (RepoFile path $ generatedFileContentId)
 
+savePendingOperation :: PendingOperation -> IO ()
+savePendingOperation pendingOperation =
+    writeFile pendingFile (show pendingOperation)
 
-
-
+getPendingOperation :: IO (Maybe PendingOperation)
+getPendingOperation =
+    do
+        doesPendingFileExist <- doesFileExist pendingFile
+        if doesPendingFileExist
+            then readFile pendingFile >>= return . Just . read
+            else return Nothing
 
 
 

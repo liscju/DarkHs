@@ -34,6 +34,9 @@ getPathFromDiffedFileTreeElement (DiffedFile _ path _) = path
 getFileChangedFromDiffedFileTreeElement :: DiffedFileTreeElement -> FileChanged
 getFileChangedFromDiffedFileTreeElement (DiffedFile fileChanged _ _) = fileChanged
 
+getPathOfRepoTreeFileContent :: RepoTreeFileContent -> FilePath
+getPathOfRepoTreeFileContent (RepoFileContent filePath _) = filePath
+
 convertDiffedFileTreeElementToRepoTreeFileContent :: DiffedFileTreeElement -> Maybe RepoTreeFileContent
 convertDiffedFileTreeElementToRepoTreeFileContent (DiffedFile fileChanged filePath diffedFileContent)
     | fileChanged == RemovedFile = Nothing

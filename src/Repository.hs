@@ -45,6 +45,10 @@ data ThreeWayCommitRebaseMergeResult =
     ThreeWayCommitRebaseMerged
     | ThreeWayCommitRebaseConflictsToResolved
 
+data PendingOperation =
+    MergeConflictToResolve [FilePath]
+    deriving (Read,Show)
+
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
 
