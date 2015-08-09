@@ -32,20 +32,25 @@ initialRepositoryFiles = [
         (masterBranchFile, show initialHeadCommitId)
     ]
 
+
 repositoryMakeAction :: RepoAction -> IO ()
-repositoryMakeAction (RepoInit) = initializeRepository
-repositoryMakeAction (RepoCommit msg) = commitRepository msg
-repositoryMakeAction (RepoCheckoutByCommitId commitId) = checkoutRepositoryByCommitId commitId
-repositoryMakeAction (RepoCheckoutByBranchId branchId) = checkoutRepositoryByBranchId branchId
-repositoryMakeAction (RepoBranch branchId) = branchRepository branchId
-repositoryMakeAction (RepoLog) = logRepository
-repositoryMakeAction (RepoDiffNotCommited) = diffNotCommitedRepository
-repositoryMakeAction (RepoDiffCommits newCommit oldCommit) = diffCommits newCommit oldCommit
-repositoryMakeAction (RepoDiffBranches newBranch oldBranch) = diffBranches newBranch oldBranch
-repositoryMakeAction (RepoRebase branchId) = rebaseBranchRepository branchId
-repositoryMakeAction (RepoStatus) = statusRepository
-repositoryMakeAction (RepoGetVersion) = putStrLn "DarkHs version 0.1.0.0"
-repositoryMakeAction (RepoUsage) = putStrLn "Usage: DarkHs.exe [--version|--help]"
+repositoryMakeAction repoAction =
+    repositoryDelegateAction repoAction
+
+repositoryDelegateAction :: RepoAction -> IO ()
+repositoryDelegateAction (RepoInit) = initializeRepository
+repositoryDelegateAction (RepoCommit msg) = commitRepository msg
+repositoryDelegateAction (RepoCheckoutByCommitId commitId) = checkoutRepositoryByCommitId commitId
+repositoryDelegateAction (RepoCheckoutByBranchId branchId) = checkoutRepositoryByBranchId branchId
+repositoryDelegateAction (RepoBranch branchId) = branchRepository branchId
+repositoryDelegateAction (RepoLog) = logRepository
+repositoryDelegateAction (RepoDiffNotCommited) = diffNotCommitedRepository
+repositoryDelegateAction (RepoDiffCommits newCommit oldCommit) = diffCommits newCommit oldCommit
+repositoryDelegateAction (RepoDiffBranches newBranch oldBranch) = diffBranches newBranch oldBranch
+repositoryDelegateAction (RepoRebase branchId) = rebaseBranchRepository branchId
+repositoryDelegateAction (RepoStatus) = statusRepository
+repositoryDelegateAction (RepoGetVersion) = putStrLn "DarkHs version 0.1.0.0"
+repositoryDelegateAction (RepoUsage) = putStrLn "Usage: DarkHs.exe [--version|--help]"
 
 repositoryActionHandler :: IO a -> (IOError -> IO a) -> IO ()
 repositoryActionHandler action excHandler =
