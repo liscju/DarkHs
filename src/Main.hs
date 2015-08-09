@@ -3,58 +3,32 @@ module Main where
 import System.Environment
 import Data.Char
 
+import Repository
 import RepositoryActions
 
-data Action =
-    Init
-    | Commit String
-    | CheckoutByCommitId Int
-    | CheckoutByBranchId String
-    | Branch String
-    | DiffNotCommited
-    | DiffCommits Int Int
-    | DiffBranches String String
-    | Rebase String
-    | Log
-    | Status
-    | GetVersion
-    | Usage
-
-parseArguments :: [String] -> Maybe Action
-parseArguments ["init"] = Just Init
-parseArguments ["commit", msg] = Just $ Commit msg
+parseArguments :: [String] -> Maybe RepoAction
+parseArguments ["init"] = Just RepoInit
+parseArguments ["commit", msg] = Just $ RepoCommit msg
 parseArguments ["checkout", paramId]
-    | isNumber (paramId !! 0) = Just $ CheckoutByCommitId $ read paramId
-    | otherwise               = Just $ CheckoutByBranchId paramId
-parseArguments ["branch", branchId] = Just $ Branch branchId
-parseArguments ["log"] = Just Log
-parseArguments ["diff"] = Just DiffNotCommited
+    | isNumber (paramId !! 0) = Just $ RepoCheckoutByCommitId $ read paramId
+    | otherwise               = Just $ RepoCheckoutByBranchId paramId
+parseArguments ["branch", branchId] = Just $ RepoBranch branchId
+parseArguments ["log"] = Just RepoLog
+parseArguments ["diff"] = Just RepoDiffNotCommited
 parseArguments ["diff", param1, param2]
     | isNumber (head param1) && isNumber (head param2)
-        = Just $ DiffCommits (read param1) (read param2)
+        = Just $ RepoDiffCommits (read param1) (read param2)
     | isAlpha (head param1) && isAlpha (head param2)
-        = Just $ DiffBranches param1 param2
-parseArguments ["rebase", branchId] = Just $ Rebase branchId
-parseArguments ["status"] = Just Status
-parseArguments ["--version"] = Just GetVersion
-parseArguments ["--help"] = Just Usage
-parseArguments [] = Just Usage
+        = Just $ RepoDiffBranches param1 param2
+parseArguments ["rebase", branchId] = Just $ RepoRebase branchId
+parseArguments ["status"] = Just RepoStatus
+parseArguments ["--version"] = Just RepoGetVersion
+parseArguments ["--help"] = Just RepoUsage
+parseArguments [] = Just RepoUsage
 parseArguments badArgList = Nothing
 
-doAction :: Maybe Action -> IO ()
-doAction (Just Init) = initializeRepository
-doAction (Just (Commit msg)) = commitRepository msg
-doAction (Just (CheckoutByCommitId commitId)) = checkoutRepositoryByCommitId commitId
-doAction (Just (CheckoutByBranchId branchId)) = checkoutRepositoryByBranchId branchId
-doAction (Just (Branch branchId)) = branchRepository branchId
-doAction (Just Log) = logRepository
-doAction (Just DiffNotCommited) = diffNotCommitedRepository
-doAction (Just (DiffCommits newCommit oldCommit)) = diffCommits newCommit oldCommit
-doAction (Just (DiffBranches newBranch oldBranch)) = diffBranches newBranch oldBranch
-doAction (Just (Rebase branchId)) = rebaseBranchRepository branchId
-doAction (Just Status) = statusRepository
-doAction (Just GetVersion) = putStrLn "DarkHs version 0.1.0.0"
-doAction (Just Usage) = putStrLn "Usage: DarkHs.exe [--version|--help]"
+doAction :: Maybe RepoAction -> IO ()
+doAction (Just action) = repositoryMakeAction action
 doAction Nothing = putStrLn "Unrecognized command line arguments"
 
 main :: IO ()

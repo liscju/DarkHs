@@ -3,6 +3,21 @@ module Repository where
 import Data.List
 import Data.Maybe
 
+data RepoAction =
+    RepoInit
+    | RepoCommit String
+    | RepoCheckoutByCommitId Int
+    | RepoCheckoutByBranchId String
+    | RepoBranch String
+    | RepoDiffNotCommited
+    | RepoDiffCommits Int Int
+    | RepoDiffBranches String String
+    | RepoRebase String
+    | RepoLog
+    | RepoStatus
+    | RepoGetVersion
+    | RepoUsage
+
 type CommitId = Int
 type CommitMsg = String
 
