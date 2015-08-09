@@ -32,12 +32,28 @@ initialRepositoryFiles = [
         (masterBranchFile, show initialHeadCommitId)
     ]
 
+resolvePendingOperation :: PendingOperation -> RepoAction -> IO ()
+resolvePendingOperation (MergeConflictToResolve pathsToConflictsToFix) actionRequested =
+    case actionRequested of
+        RepoCommit msg -> do
+            removePendingOperation
+            repositoryDelegateAction actionRequested
+        RepoStatus -> do
+            putStrLn "Merge conflicts to resolve:"
+            forM pathsToConflictsToFix $ \path -> putStrLn $ "\t" ++ path
+            return ()
+        _ -> putStrLn "You had to first resolve merge conflicts - see status for more information"
 
 repositoryMakeAction :: RepoAction -> IO ()
 repositoryMakeAction repoAction =
     do
         changeCurrentDirectoryToMainRepoDirectory
-        repositoryDelegateAction repoAction
+        maybePendingOperation <- getPendingOperation
+        case maybePendingOperation of
+            Just pendingOperation ->
+                resolvePendingOperation pendingOperation repoAction
+            Nothing ->
+                repositoryDelegateAction repoAction
 
 repositoryDelegateAction :: RepoAction -> IO ()
 repositoryDelegateAction (RepoInit) = initializeRepository

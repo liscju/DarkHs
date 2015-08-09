@@ -462,6 +462,10 @@ getPendingOperation =
             then readFile pendingFile >>= return . Just . read
             else return Nothing
 
+removePendingOperation :: IO ()
+removePendingOperation =
+    removeFile pendingFile
+
 
 
 
