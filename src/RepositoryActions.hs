@@ -265,8 +265,11 @@ rebaseBranchRepository branchId =
                 FastForwardMerged ->
                     putStrLn "Merge: Fast forward merged"
                 FastForwardNotApplicable -> do
-                    putStrLn "Merge: Fast forward not applicable, calculating typical rebase"
-                    tryRebaseMergeToBranch branchId
+                    completedWithoutMergeConflicts <- tryRebaseMergeToBranch branchId
+                    if completedWithoutMergeConflicts
+                        then putStrLn "Rebase succesfully completed"
+                        else putStrLn "Before completing rebasing you must resolve merge conflicts and commit"
+
             return ())
         (\exc ->
             putStrLn $ "Diff failed with exception :" ++

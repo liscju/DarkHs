@@ -401,7 +401,7 @@ calculateBranchesMergedContent currentBranchId mergeBranchId =
 -- current branch: A -> B |-> C
 -- merge branch:   A -> B |-> D -> E -> F
 -- result          A -> B -> D -> E -> F -> C'
-tryRebaseMergeToBranch :: BranchId -> IO ()
+tryRebaseMergeToBranch :: BranchId -> IO Bool
 tryRebaseMergeToBranch mergeBranchId =
     do
         BranchPointer currentBranchId <- getCurrentBranchPointer
@@ -438,9 +438,9 @@ tryRebaseMergeToBranch mergeBranchId =
                 copyRepoFilesToWorkingDirectory treeInfoMergeConflicts
                 savePendingOperation $ MergeConflictToResolve $
                     map getPathOfRepoTreeFileContent (lefts mergeResult)
-            else return ()
+                return False
+            else return True
 
-        return ()
         where
             isMergeResultWithoutConflicts mergeResult = all isRight mergeResult
 
