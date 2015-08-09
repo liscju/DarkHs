@@ -35,7 +35,9 @@ initialRepositoryFiles = [
 
 repositoryMakeAction :: RepoAction -> IO ()
 repositoryMakeAction repoAction =
-    repositoryDelegateAction repoAction
+    do
+        changeCurrentDirectoryToMainRepoDirectory
+        repositoryDelegateAction repoAction
 
 repositoryDelegateAction :: RepoAction -> IO ()
 repositoryDelegateAction (RepoInit) = initializeRepository
@@ -55,7 +57,6 @@ repositoryDelegateAction (RepoUsage) = putStrLn "Usage: DarkHs.exe [--version|--
 repositoryActionHandler :: IO a -> (IOError -> IO a) -> IO ()
 repositoryActionHandler action excHandler =
     do
-        changeCurrentDirectoryToMainRepoDirectory
         catch
             action
             excHandler
