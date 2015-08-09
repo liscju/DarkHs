@@ -88,13 +88,17 @@ logRepository =
 
 checkoutRepository :: CommitId -> IO ()
 checkoutRepository commitId =
-    do
-        commitInfo <- getCommitInformation commitId
-        let commitTreeId = getCommitTreeId commitInfo
-        commitTreeInfo <- getTreeInfo commitTreeId
-        clearCurrentWorkingDirectory
-        copyRepoFilesToWorkingDirectory commitTreeInfo
-        saveHeadToFile commitId
+    repositoryActionHandler
+        (do
+            commitInfo <- getCommitInformation commitId
+            let commitTreeId = getCommitTreeId commitInfo
+            commitTreeInfo <- getTreeInfo commitTreeId
+            clearCurrentWorkingDirectory
+            copyRepoFilesToWorkingDirectory commitTreeInfo
+            saveHeadToFile commitId)
+        (\exc ->
+            putStrLn $ "Log failed with exception :" ++
+                show (exc :: IOException) )
 
 checkoutRepositoryByCommitId :: CommitId -> IO ()
 checkoutRepositoryByCommitId commitId =
@@ -182,40 +186,54 @@ showDifferenceBetweenTreeInfos newTreeInfo oldTreeInfo =
 
 diffNotCommitedRepository :: IO ()
 diffNotCommitedRepository =
-    do
-        workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
-        headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
-        showDifferenceBetweenTreeInfos workingDirectoryTree headDirectoryTree
+    repositoryActionHandler
+        (do
+            workingDirectoryTree <- copyWorkingDirectoryToRepoFiles
+            headDirectoryTree <- getCurrentCommitId >>= getTreeInfoForCommitId
+            showDifferenceBetweenTreeInfos workingDirectoryTree headDirectoryTree)
+        (\exc ->
+            putStrLn $ "Diff failed with exception :" ++
+                                        show (exc :: IOException) )
 
 diffCommits :: CommitId -> CommitId -> IO ()
 diffCommits newCommit oldCommit =
-    do
-        newDirectoryTree <- getTreeInfoForCommitId newCommit
-        oldDirectoryTree <- getTreeInfoForCommitId oldCommit
-        showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
+    repositoryActionHandler
+        (do
+            newDirectoryTree <- getTreeInfoForCommitId newCommit
+            oldDirectoryTree <- getTreeInfoForCommitId oldCommit
+            showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree)
+        (\exc ->
+            putStrLn $ "Diff failed with exception :" ++
+                                        show (exc :: IOException) )
 
 diffBranches :: BranchId -> BranchId -> IO ()
 diffBranches newBranch oldBranch =
-    do
-        newDirectoryTree <- getBranchCommit newBranch >>= getTreeInfoForCommitId
-        oldDirectoryTree <- getBranchCommit oldBranch >>= getTreeInfoForCommitId
-        showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree
+    repositoryActionHandler
+        (do
+            newDirectoryTree <- getBranchCommit newBranch >>= getTreeInfoForCommitId
+            oldDirectoryTree <- getBranchCommit oldBranch >>= getTreeInfoForCommitId
+            showDifferenceBetweenTreeInfos newDirectoryTree oldDirectoryTree)
+        (\exc ->
+            putStrLn $ "Diff failed with exception :" ++
+                                        show (exc :: IOException) )
 
 rebaseBranchRepository :: BranchId -> IO ()
 rebaseBranchRepository branchId =
-    do
-        fastForwardResult <- tryFastForwardMergeToBranch branchId
-        case fastForwardResult of
-            FastForwardNothingToMerge ->
-                putStrLn "Merge: Fast forward nothing to merge"
-            FastForwardMerged ->
-                putStrLn "Merge: Fast forward merged"
-            FastForwardNotApplicable -> do
-                putStrLn "Merge: Fast forward not applicable, calculating typical rebase"
-                tryRebaseMergeToBranch branchId
-
-
-        return ()
+    repositoryActionHandler
+        (do
+            fastForwardResult <- tryFastForwardMergeToBranch branchId
+            case fastForwardResult of
+                FastForwardNothingToMerge ->
+                    putStrLn "Merge: Fast forward nothing to merge"
+                FastForwardMerged ->
+                    putStrLn "Merge: Fast forward merged"
+                FastForwardNotApplicable -> do
+                    putStrLn "Merge: Fast forward not applicable, calculating typical rebase"
+                    tryRebaseMergeToBranch branchId
+            return ())
+        (\exc ->
+            putStrLn $ "Diff failed with exception :" ++
+                                        show (exc :: IOException) )
 
 
 

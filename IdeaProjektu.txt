@@ -59,6 +59,8 @@ Znalezione bugi:
 		powinien miec mozliwosc wyszczegoleniania wiecej niz jednego rodzica,
 		w koncu 3way merge trza zaimplementowac - takie sa postanowienia
 	=> Diff przed zrobieniem pierwszego commitu nie dziala,trzeba wziasc commit 0 pod uwage
+	=> Po zrobieniu merga dodaje on jakies znaki nowej linii na koncu(prawdopodobnie) przez co
+		diff nowy_branch_po_rebase branch_rebase nie dziala poprawnie
 	=> Po upewnieniu sie ze unmodified files jest oka,trza usunac umodiified files z
 		pokazywania go w statusi i diff
 	-> gdy skopiujemy i wkleimy katalog w windows on przed kopia wstawia znak -- ktore
