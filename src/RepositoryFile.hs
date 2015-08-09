@@ -373,15 +373,11 @@ tryFastForwardMergeToBranch branchId =
                     fastForwardCurrentBranch mergeBranchCommit >> return FastForwardMerged
                 | otherwise = return FastForwardNotApplicable
 
--- One Commit this time only
---
--- current branch: A -> B |-> C
--- merge branch:   A -> B |-> D -> E -> F
--- result          A -> B -> D -> E -> F -> C'
-tryRebaseMergeToBranch :: BranchId -> IO ()
-tryRebaseMergeToBranch mergeBranchId =
+calculateBranchesMergedContent :: BranchId ->
+                                  BranchId ->
+                                  IO [Either RepoTreeFileContent RepoTreeFileContent]
+calculateBranchesMergedContent currentBranchId mergeBranchId =
     do
-        BranchPointer currentBranchId <- getCurrentBranchPointer
         commonAncestor <- findBranchYoungestCommonAncestor currentBranchId mergeBranchId
 
         currentBranchTreeInfo <- getBranchCommit currentBranchId >>= getTreeInfoForCommitId
@@ -394,8 +390,19 @@ tryRebaseMergeToBranch mergeBranchId =
         mergeBranchDiffTreeInfosFromAncestor <-
             diffTreeInfos mergeBranchTreeInfo commonAncestorTreeInfo
 
-        let mergeResult = mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
-                                             mergeBranchDiffTreeInfosFromAncestor
+        return $ mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
+                                    mergeBranchDiffTreeInfosFromAncestor
+
+-- One Commit this time only
+--
+-- current branch: A -> B |-> C
+-- merge branch:   A -> B |-> D -> E -> F
+-- result          A -> B -> D -> E -> F -> C'
+tryRebaseMergeToBranch :: BranchId -> IO ()
+tryRebaseMergeToBranch mergeBranchId =
+    do
+        BranchPointer currentBranchId <- getCurrentBranchPointer
+        mergeResult <- calculateBranchesMergedContent currentBranchId mergeBranchId
 
         -- rights bo commit robimy tylko z tych ktore przeszly bez problemu,
         -- jezeli problem nastapil to rozwiazuje to merge conflictach z lefts
