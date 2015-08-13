@@ -396,13 +396,19 @@ calculateBranchesMergedContent currentBranchId mergeBranchId =
         return $ mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
                                     mergeBranchDiffTreeInfosFromAncestor
 
+tryRebaseMergeToBranch :: BranchId -> IO Bool
+tryRebaseMergeToBranch = tryRebaseMergeOneCommitToBranch
+
 -- One Commit this time only
 --
--- current branch: A -> B |-> C
--- merge branch:   A -> B |-> D -> E -> F
--- result          A -> B -> D -> E -> F -> C'
-tryRebaseMergeToBranch :: BranchId -> IO Bool
-tryRebaseMergeToBranch mergeBranchId =
+-- current branch:         A -> B |-> C
+-- merge branch:           A -> B |-> D -> E -> F
+-- result(current branch): A -> B -> D -> E -> F -> C'
+-- result commit id of C'
+-- left working directory in merge pending state if merge conflicts
+--  occured
+tryRebaseMergeOneCommitToBranch :: BranchId -> IO Bool
+tryRebaseMergeOneCommitToBranch mergeBranchId =
     do
         BranchPointer currentBranchId <- getCurrentBranchPointer
         mergeResult <- calculateBranchesMergedContent currentBranchId mergeBranchId
