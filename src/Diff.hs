@@ -4,6 +4,7 @@ import Data.Maybe
 import Data.List
 import Data.Algorithm.Diff
 import Data.Algorithm.Diff3
+import Debug.Trace
 
 type Line = String
 
@@ -96,15 +97,17 @@ prettyPrintDiffedFile (DiffedFile fileChanged filePath diffedFileContent) =
 -- either left->merge conflict right->ok file
 mergeDiffFileTrees :: DiffedFileTree ->
                       DiffedFileTree ->
+                      [RepoTreeFileContent] ->
                       [Either RepoTreeFileContent RepoTreeFileContent]
-mergeDiffFileTrees newDiffFileTree oldDiffFileTree =
+mergeDiffFileTrees newDiffFileTree oldDiffFileTree baseRepoTreeFileContents =
     map rightJust $ filter notRightNothing $
-        map mergeDiffFileTreeElementWithSamePath allPairsOfDiffedFileTreeElementWithSamePath
+        map mergeDiffFileTreeElementWithSamePath allTriplesOfDiffedFileTreeElementWithSamePath
     where
         allPaths = nub $ map getPathFromDiffedFileTreeElement $ newDiffFileTree ++ oldDiffFileTree
         diffFileTreeElements path = (find ((==) path . getPathFromDiffedFileTreeElement) newDiffFileTree,
-                                     find ((==) path . getPathFromDiffedFileTreeElement) oldDiffFileTree)
-        allPairsOfDiffedFileTreeElementWithSamePath = map diffFileTreeElements allPaths
+                                     find ((==) path . getPathFromDiffedFileTreeElement) oldDiffFileTree,
+                                     find ((==) path . getPathOfRepoTreeFileContent) baseRepoTreeFileContents)
+        allTriplesOfDiffedFileTreeElementWithSamePath = map diffFileTreeElements allPaths
 
         notRightNothing (Right Nothing) = False
         notRightNothing _               = True
@@ -113,60 +116,77 @@ mergeDiffFileTrees newDiffFileTree oldDiffFileTree =
         rightJust (Left x)  = Left x
 
 -- diffedfiletreelements must have been diffed by common ancestor
-mergeDiffFileTreeElementWithSamePath :: (Maybe DiffedFileTreeElement, Maybe DiffedFileTreeElement) ->
+mergeDiffFileTreeElementWithSamePath ::
+                            (Maybe DiffedFileTreeElement,
+                             Maybe DiffedFileTreeElement,
+                             Maybe RepoTreeFileContent) ->
                             Either RepoTreeFileContent (Maybe RepoTreeFileContent)
-mergeDiffFileTreeElementWithSamePath (newMaybeDiffTreeElement,oldMaybeDiffTreeElement) =
-    case (newMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement ,
-          oldMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement) of
-            (Just AddedFile, Nothing) -> Right $
-                newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Nothing, Just AddedFile) -> Right $
-                oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Just AddedFile, Just _)  ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-            (Just _, Just AddedFile)  ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-
-            (Just RemovedFile, Just UnchangedFile) -> Right $
-                newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Just UnchangedFile, Just RemovedFile) -> Right $
-                oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Just RemovedFile, Just RemovedFile) -> Right $ Nothing
-            (Just RemovedFile, _) ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-            (_, Just RemovedFile) ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-
-            (Just ModifiedFile, Just UnchangedFile) -> Right $
-                newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Just UnchangedFile, Just ModifiedFile) -> Right $
-                oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-            (Just ModifiedFile, x) ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-            (x, Just ModifiedFile) ->
-                tryToResolveConflictResult (fromJust newMaybeDiffTreeElement) (fromJust oldMaybeDiffTreeElement)
-
-            (Just UnchangedFile,Just UnchangedFile) -> Right $
-                newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
-    where
-                tryToResolveConflictResult =
-                    tryResolvingFileContentMergeConflict
+mergeDiffFileTreeElementWithSamePath
+    (newMaybeDiffTreeElement,oldMaybeDiffTreeElement,baseRepoTreeFileContent) =
+        case (newMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement ,
+              oldMaybeDiffTreeElement >>= Just . getFileChangedFromDiffedFileTreeElement) of
+                (Just AddedFile, Nothing) -> Right $
+                    newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Nothing, Just AddedFile) -> Right $
+                    oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Just AddedFile, Just _)  -> tryToResolveConflictResult
+                (Just _, Just AddedFile)  -> tryToResolveConflictResult
+                (Just RemovedFile, Just UnchangedFile) -> Right $
+                    newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Just UnchangedFile, Just RemovedFile) -> Right $
+                    oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Just RemovedFile, Just RemovedFile) -> Right $ Nothing
+                (Just RemovedFile, _) -> tryToResolveConflictResult
+                (_, Just RemovedFile) -> tryToResolveConflictResult
+                (Just ModifiedFile, Just UnchangedFile) -> Right $
+                    newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Just UnchangedFile, Just ModifiedFile) -> Right $
+                    oldMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+                (Just ModifiedFile, x) -> tryToResolveConflictResult
+                (x, Just ModifiedFile) -> tryToResolveConflictResult
+                (Just UnchangedFile,Just UnchangedFile) -> Right $
+                    newMaybeDiffTreeElement >>= convertDiffedFileTreeElementToRepoTreeFileContent
+        where
+            baseRepoFileContent Nothing = ""
+            baseRepoFileContent (Just (RepoFileContent _ content)) = content
+            tryToResolveConflictResult =
+                tryResolvingFileContentMergeConflict
+                    (fromJust newMaybeDiffTreeElement)
+                    (fromJust oldMaybeDiffTreeElement)
+                    (baseRepoFileContent baseRepoTreeFileContent)
 
 -- try resolve conflict on file content level
-tryResolvingFileContentMergeConflict :: DiffedFileTreeElement ->
+tryResolvingFileContentMergeConflict ::
                              DiffedFileTreeElement ->
+                             DiffedFileTreeElement ->
+                             String   ->
                              Either RepoTreeFileContent (Maybe RepoTreeFileContent)
-tryResolvingFileContentMergeConflict (DiffedFile newFileChanged newFilePath newDiffedFileContent)
+tryResolvingFileContentMergeConflict
+                          (DiffedFile newFileChanged newFilePath newDiffedFileContent)
                           (DiffedFile oldFileChanged oldFilePath oldDiffedFileContent)
-    | newFilePath /= oldFilePath = error "Resolving conflict on file level only - args must have same path"
-    | otherwise = Left $ RepoFileContent newFilePath $
-        "New Version:\n" ++
-        "=======================================\n" ++
-        getActualContent newDiffedFileContent ++
-        "\n=======================================\n" ++
-        getActualContent oldDiffedFileContent ++
-        "\n=======================================\n" ++
-        "Old Version"
+                          baseContent
+    | newFilePath /= oldFilePath
+        = error "Resolving conflict on file level only - args must have same path"
+    | otherwise = mergeResult newFilePath
+    where
+        newFileContentLines = lines $ getActualContent newDiffedFileContent
+        oldFileContentLines = lines $ getActualContent oldDiffedFileContent
+        baseContentLiens    = lines baseContent
+        hunkToString (LeftChange xs) = unlines xs
+        hunkToString (RightChange xs) = unlines xs
+        hunkToString (Unchanged xs) = unlines xs
+        hunkToString (Conflict newLines baseLines oldLines) =
+            "New Version:\n" ++
+                "=======================================\n" ++
+                (unlines newLines) ++
+                "\n=======================================\n" ++
+                (unlines oldLines) ++
+                "\n=======================================\n" ++
+                "Old Version"
+        mergeResult path =
+            case merge (diff3 newFileContentLines baseContentLiens oldFileContentLines) of
+                Left hunks -> Left $ RepoFileContent path $ unlines $ map hunkToString hunks
+                Right xs -> Right $ Just $ RepoFileContent path  $ unlines xs
 
 
 

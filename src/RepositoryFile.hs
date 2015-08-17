@@ -393,8 +393,12 @@ calculateBranchesMergedContent currentBranchId mergeBranchId =
         mergeBranchDiffTreeInfosFromAncestor <-
             diffTreeInfos mergeBranchTreeInfo commonAncestorTreeInfo
 
+        commonAncestorRepoTreeFileContent <-
+            createRepoTreeFileContentFromTreeInfo commonAncestorTreeInfo
+
         return $ mergeDiffFileTrees currentBranchDiffTreeInfosFromAncestor
                                     mergeBranchDiffTreeInfosFromAncestor
+                                    commonAncestorRepoTreeFileContent
 
 tryRebaseMergeToBranch :: BranchId -> IO Bool
 tryRebaseMergeToBranch = tryRebaseMergeOneCommitToBranch
@@ -455,6 +459,12 @@ createTreeInfoFromRepoTreeFileContent repoTreeFilesContent =
     forM repoTreeFilesContent $ \(RepoFileContent path content) -> do
         generatedFileContentId <- generateRepoFile content
         return (RepoFile path $ generatedFileContentId)
+
+createRepoTreeFileContentFromTreeInfo :: TreeInfo -> IO [RepoTreeFileContent]
+createRepoTreeFileContentFromTreeInfo treeInfo =
+    forM treeInfo $ \(RepoFile filePath fileId) -> do
+        contentOfFile <- getContentOfRepoFile fileId
+        return $ RepoFileContent filePath contentOfFile
 
 savePendingOperation :: PendingOperation -> IO ()
 savePendingOperation pendingOperation =
