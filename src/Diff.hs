@@ -52,20 +52,13 @@ getActualContent = unlines .
             | otherwise = [line]
 
 diff :: FileContent -> FileContent -> DiffedFileContent
-diff [] [] = []
-diff [] (currLine:restLines) = (DiffedLine RemovedLine currLine) : diff [] restLines
-diff (currLine:restLines) [] = (DiffedLine AddedLine   currLine) : diff restLines []
-diff (currNewLine:restNewLines) (currOldLine:restOldLines) =
-    if currNewLine == currOldLine
-        then (DiffedLine UnchangedLine currNewLine) : diff restNewLines restOldLines
-        else
-            if isJust $ find ((==) currOldLine) restNewLines
-                then
-                    (DiffedLine AddedLine currNewLine) : diff restNewLines (currOldLine:restOldLines)
-                else
-                    if isJust $ find((==) currNewLine) restOldLines
-                        then (DiffedLine RemovedLine currOldLine) : diff (currNewLine:restNewLines) restOldLines
-                        else (DiffedLine RemovedLine currOldLine) : (DiffedLine AddedLine currNewLine) : diff restNewLines restOldLines
+diff newFile oldFile =
+    map convertToDiffedLine $ getDiff newFile oldFile
+    where
+        convertToDiffedLine :: Diff String -> DiffedLine
+        convertToDiffedLine (First str)  = DiffedLine AddedLine   str
+        convertToDiffedLine (Second str) = DiffedLine RemovedLine str
+        convertToDiffedLine (Both str _) = DiffedLine UnchangedLine str
 
 prettyPrintDiffedFileContent :: DiffedFileContent -> String
 prettyPrintDiffedFileContent =
