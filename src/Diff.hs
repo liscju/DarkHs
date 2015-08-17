@@ -2,10 +2,12 @@ module Diff where
 
 import Data.Maybe
 import Data.List
+import Data.Algorithm.Diff
+import Data.Algorithm.Diff3
 
 type Line = String
 
-data LineOperation = Unchanged | Added | Removed
+data LineOperation = UnchangedLine | AddedLine | RemovedLine
     deriving (Eq,Show)
 
 data DiffedLine = DiffedLine LineOperation Line
@@ -46,33 +48,33 @@ getActualContent :: DiffedFileContent -> String
 getActualContent = unlines .
     foldl (\currFileContent diffedNextLine -> currFileContent ++ actualLineContent diffedNextLine) []
     where actualLineContent (DiffedLine lineOperation line)
-            | lineOperation == Removed = []
+            | lineOperation == RemovedLine = []
             | otherwise = [line]
 
 diff :: FileContent -> FileContent -> DiffedFileContent
 diff [] [] = []
-diff [] (currLine:restLines) = (DiffedLine Removed currLine) : diff [] restLines
-diff (currLine:restLines) [] = (DiffedLine Added   currLine) : diff restLines []
+diff [] (currLine:restLines) = (DiffedLine RemovedLine currLine) : diff [] restLines
+diff (currLine:restLines) [] = (DiffedLine AddedLine   currLine) : diff restLines []
 diff (currNewLine:restNewLines) (currOldLine:restOldLines) =
     if currNewLine == currOldLine
-        then (DiffedLine Unchanged currNewLine) : diff restNewLines restOldLines
+        then (DiffedLine UnchangedLine currNewLine) : diff restNewLines restOldLines
         else
             if isJust $ find ((==) currOldLine) restNewLines
                 then
-                    (DiffedLine Added currNewLine) : diff restNewLines (currOldLine:restOldLines)
+                    (DiffedLine AddedLine currNewLine) : diff restNewLines (currOldLine:restOldLines)
                 else
                     if isJust $ find((==) currNewLine) restOldLines
-                        then (DiffedLine Removed currOldLine) : diff (currNewLine:restNewLines) restOldLines
-                        else (DiffedLine Removed currOldLine) : (DiffedLine Added currNewLine) : diff restNewLines restOldLines
+                        then (DiffedLine RemovedLine currOldLine) : diff (currNewLine:restNewLines) restOldLines
+                        else (DiffedLine RemovedLine currOldLine) : (DiffedLine AddedLine currNewLine) : diff restNewLines restOldLines
 
 prettyPrintDiffedFileContent :: DiffedFileContent -> String
 prettyPrintDiffedFileContent =
     unlines . map diffedLineToString
     where
         diffedLineToString :: DiffedLine -> String
-        diffedLineToString (DiffedLine Unchanged line) = "   " ++ line
-        diffedLineToString (DiffedLine Added     line) = "++ " ++ line
-        diffedLineToString (DiffedLine Removed   line) = "-- " ++ line
+        diffedLineToString (DiffedLine UnchangedLine line) = "   " ++ line
+        diffedLineToString (DiffedLine AddedLine     line) = "++ " ++ line
+        diffedLineToString (DiffedLine RemovedLine   line) = "-- " ++ line
 
 prettyPrintDiffedFileTree :: DiffedFileTree -> String
 prettyPrintDiffedFileTree diffedFileTree =
