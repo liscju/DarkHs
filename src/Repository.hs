@@ -64,6 +64,12 @@ data PendingOperation =
     MergeConflictToResolve [FilePath]
     deriving (Read,Show)
 
+isRepoActionRepositoryAgnostic :: RepoAction -> Bool
+isRepoActionRepositoryAgnostic RepoInit = True
+isRepoActionRepositoryAgnostic RepoGetVersion = True
+isRepoActionRepositoryAgnostic RepoUsage = True
+isRepoActionRepositoryAgnostic _ = False
+
 getParentCommit :: CommitInfo -> CommitId
 getParentCommit (CommitInfo _ parent _) = parent
 

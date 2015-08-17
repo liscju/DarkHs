@@ -47,13 +47,16 @@ resolvePendingOperation (MergeConflictToResolve pathsToConflictsToFix) actionReq
 repositoryMakeAction :: RepoAction -> IO ()
 repositoryMakeAction repoAction =
     do
-        changeCurrentDirectoryToMainRepoDirectory
-        maybePendingOperation <- getPendingOperation
-        case maybePendingOperation of
-            Just pendingOperation ->
-                resolvePendingOperation pendingOperation repoAction
-            Nothing ->
-                repositoryDelegateAction repoAction
+        if isRepoActionRepositoryAgnostic repoAction
+            then repositoryDelegateAction repoAction
+            else do
+                changeCurrentDirectoryToMainRepoDirectory
+                maybePendingOperation <- getPendingOperation
+                case maybePendingOperation of
+                    Just pendingOperation ->
+                        resolvePendingOperation pendingOperation repoAction
+                    Nothing ->
+                        repositoryDelegateAction repoAction
 
 repositoryDelegateAction :: RepoAction -> IO ()
 repositoryDelegateAction (RepoInit) = initializeRepository
