@@ -160,18 +160,17 @@ mergeDiffFileTreeElementWithSamePath
                     (getPathFromDiffedFileTreeElement $ fromJust newMaybeDiffTreeElement)
 
 -- try resolve conflict on file content level
-tryResolvingFileContentMergeConflict ::
-                             String ->
-                             String ->
-                             String ->
-                             FilePath ->
-                             Either RepoTreeFileContent (Maybe RepoTreeFileContent)
+tryResolvingFileContentMergeConflict :: String -> String -> String -> FilePath
+    -> Either RepoTreeFileContent (Maybe RepoTreeFileContent)
 tryResolvingFileContentMergeConflict
-    newDiffedFileContent oldDiffedFileContent baseContent newFilePath = mergeResult newFilePath
+    mainContent mergeContent baseContent path =
+    case merge (diff3 mainContentLines baseContentLines mergeContentLines) of
+        Left hunks -> Left $ RepoFileContent path $ unlines $ map hunkToString hunks
+        Right xs -> Right $ Just $ RepoFileContent path  $ unlines xs
     where
-        newFileContentLines = lines newDiffedFileContent
-        oldFileContentLines = lines oldDiffedFileContent
-        baseContentLiens    = lines baseContent
+        mainContentLines = lines mainContent
+        mergeContentLines = lines mergeContent
+        baseContentLines    = lines baseContent
         hunkToString (LeftChange xs) = unlines xs
         hunkToString (RightChange xs) = unlines xs
         hunkToString (Unchanged xs) = unlines xs
@@ -183,10 +182,6 @@ tryResolvingFileContentMergeConflict
                 (unlines oldLines) ++
                 "\n=======================================\n" ++
                 "Old Version"
-        mergeResult path =
-            case merge (diff3 newFileContentLines baseContentLiens oldFileContentLines) of
-                Left hunks -> Left $ RepoFileContent path $ unlines $ map hunkToString hunks
-                Right xs -> Right $ Just $ RepoFileContent path  $ unlines xs
 
 
 
