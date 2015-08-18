@@ -40,6 +40,9 @@ getFileChangedFromDiffedFileTreeElement (DiffedFile fileChanged _ _) = fileChang
 getPathOfRepoTreeFileContent :: RepoTreeFileContent -> FilePath
 getPathOfRepoTreeFileContent (RepoFileContent filePath _) = filePath
 
+getDiffedFileContentFromDiffedFileTreeElement :: DiffedFileTreeElement -> DiffedFileContent
+getDiffedFileContentFromDiffedFileTreeElement (DiffedFile _ _ diffedFileContent) = diffedFileContent
+
 convertDiffedFileTreeElementToRepoTreeFileContent :: DiffedFileTreeElement -> Maybe RepoTreeFileContent
 convertDiffedFileTreeElementToRepoTreeFileContent (DiffedFile fileChanged filePath diffedFileContent)
     | fileChanged == RemovedFile = Nothing
@@ -151,26 +154,23 @@ mergeDiffFileTreeElementWithSamePath
             baseRepoFileContent (Just (RepoFileContent _ content)) = content
             tryToResolveConflictResult =
                 tryResolvingFileContentMergeConflict
-                    (fromJust newMaybeDiffTreeElement)
-                    (fromJust oldMaybeDiffTreeElement)
+                    (getActualContent $ getDiffedFileContentFromDiffedFileTreeElement $ fromJust newMaybeDiffTreeElement)
+                    (getActualContent $ getDiffedFileContentFromDiffedFileTreeElement $ fromJust oldMaybeDiffTreeElement)
                     (baseRepoFileContent baseRepoTreeFileContent)
+                    (getPathFromDiffedFileTreeElement $ fromJust newMaybeDiffTreeElement)
 
 -- try resolve conflict on file content level
 tryResolvingFileContentMergeConflict ::
-                             DiffedFileTreeElement ->
-                             DiffedFileTreeElement ->
-                             String   ->
+                             String ->
+                             String ->
+                             String ->
+                             FilePath ->
                              Either RepoTreeFileContent (Maybe RepoTreeFileContent)
 tryResolvingFileContentMergeConflict
-                          (DiffedFile newFileChanged newFilePath newDiffedFileContent)
-                          (DiffedFile oldFileChanged oldFilePath oldDiffedFileContent)
-                          baseContent
-    | newFilePath /= oldFilePath
-        = error "Resolving conflict on file level only - args must have same path"
-    | otherwise = mergeResult newFilePath
+    newDiffedFileContent oldDiffedFileContent baseContent newFilePath = mergeResult newFilePath
     where
-        newFileContentLines = lines $ getActualContent newDiffedFileContent
-        oldFileContentLines = lines $ getActualContent oldDiffedFileContent
+        newFileContentLines = lines newDiffedFileContent
+        oldFileContentLines = lines oldDiffedFileContent
         baseContentLiens    = lines baseContent
         hunkToString (LeftChange xs) = unlines xs
         hunkToString (RightChange xs) = unlines xs
